@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Vectrosity;
+using Chronos;
 
 
 public class SoldierAgent : MonoBehaviour
 {
     private CharacterController cc;
+    private Timeline time;
 
-    public Vector3 gotoPoint;
     public Vector3 aimingPoint;
 
     public bool takeInput = false;
@@ -38,23 +39,21 @@ public class SoldierAgent : MonoBehaviour
     private VectorLine moveLine, currentMoveLine;
     [SerializeField]
     private float speed;
+    private float speedChange;
 
 
     void Start()
     {
         cc = GetComponent<CharacterController>();
+        time = GetComponent<Timeline>();
 
         aimMinLine = new VectorLine("Min aim limit line", new List<Vector3>(64), 1);
-        aimMinLine.color = Color.blue;
         aimMinLine.Draw3DAuto();
 
         aimMaxLine = new VectorLine("Max aim limit line", new List<Vector3>(64), 1);
-        aimMaxLine.color = Color.blue;
         aimMaxLine.Draw3DAuto();
 
-
         moveTriggerLine = new VectorLine("Move trigger line", new List<Vector3>(64), 1);
-        moveTriggerLine.color = Color.blue;
         moveTriggerLine.Draw3DAuto();
 
 
@@ -76,11 +75,11 @@ public class SoldierAgent : MonoBehaviour
         currentMoveLine.points3.Add(transform.position);
         currentMoveLine.color = Color.yellow;
         currentMoveLine.lineType = LineType.Continuous;
-        currentMoveLine.SetWidth(aimWidth * 10f, 0);
+        currentMoveLine.SetWidth(aimWidth * 3f, 0);
         currentMoveLine.SetWidth(aimWidth, 1); 
         currentMoveLine.Draw3DAuto();
 
-        gotoPoint = transform.position;
+        aimingPoint = transform.position;
     }
 
 
@@ -99,14 +98,10 @@ public class SoldierAgent : MonoBehaviour
 
         float dot = Vector3.Dot(aimVector, transform.forward);
         float dotNormalised = (dot + 1f) / 2f;  //should b 1 = same direction, 0 = opposite direction
-        float aimLengthFactor = dotNormalised.Clamp(1f, 0.25f);
+        float aimLengthFactor = dotNormalised.Clamp(1f, 0.3f);
 
         aimingPoint = transform.position + (aimVector * aimLengthFactor * 4f);
 
-        //
-        aimLine.points3[0] = transform.position;
-        aimLine.points3[1] = aimingPoint;
-        aimLine.color = Color.red;
     }
 
 
@@ -121,21 +116,20 @@ public class SoldierAgent : MonoBehaviour
         //if it's backwards, we slow down to a speed where we can turn
         if (dot < -0.1f)
         {
-            speed = (speed - deceleration).Clamp(0f, maxSpeed);
+            speedChange = -deceleration;
             if (speed < 0.1f)
                 transform.rotation = Quaternion.LookRotation(turnedVector);
         }
 
-        //if it's not backwards we turn and if quite forwards, accelerate
+        //if it's not backwards we turn and if mainly forwards, accelerate
         else
         {
+            speedChange = 0f;
             transform.rotation = Quaternion.LookRotation(turnedVector);
             if (dot > 0.5f)
-                speed = (speed + acceleration).Clamp(0f, maxSpeed);
+                speedChange = acceleration;
         }
 
-        //moveLine.points3[0] = transform.position;
-        //moveLine.points3[1] = transform.position + (moveVector * maxSpeed);
 
     }
 
@@ -147,39 +141,49 @@ public class SoldierAgent : MonoBehaviour
     void Update()
     {
         //if we have some speed we move
+        speed = (speed + (speedChange * time.deltaTime)).Clamp(0f, maxSpeed);
         if (speed.Abs() > 0.1f)
-            cc.Move(transform.forward * Time.deltaTime * speed);
+            cc.Move(transform.forward * time.deltaTime * speed);
 
-        //Draw our movement lines to be helpful
+        LinesUpdate();
+
+       //reset aiming and assume slowing down for next frame
+        aimingPoint = transform.position;
+        speedChange = -deceleration;
+
+    }
+
+    private void LinesUpdate()
+    {
+        //Update all our drawing lines
         currentMoveLine.points3[0] = transform.position;
         currentMoveLine.points3[1] = transform.position + (transform.forward * speed);
         currentMoveLine.points3[2] = transform.position + (transform.forward * maxSpeed);
 
+        aimLine.points3[0] = transform.position;
+        aimLine.points3[1] = aimingPoint;
+        aimLine.color = Color.red;
 
-        //apply drag
-        speed = (speed * (1-drag)).Clamp(0f, maxSpeed);
+        aimMinLine.MakeCircle(transform.position, transform.up, aimMin);
+        aimMaxLine.MakeCircle(transform.position, transform.up, aimMax);
+        moveTriggerLine.MakeCircle(transform.position, transform.up, moveTriggerRange);
 
+
+        //debug lines around aiming
         if (showDebug)
         {
-            aimMinLine.MakeCircle(transform.position, transform.up, aimMin);
-            aimMaxLine.MakeCircle(transform.position, transform.up, aimMax);
-            moveTriggerLine.MakeCircle(transform.position, transform.up, moveTriggerRange);
+            aimMinLine.color = Color.blue;
+            aimMaxLine.color = Color.blue;
+            moveTriggerLine.color = Color.blue;
+        }
+        else
+        {
+            aimMinLine.color = Color.clear;
+            aimMaxLine.color = Color.clear;
+            moveTriggerLine.color = Color.clear;
         }
 
 
-        ////Follow code
-        //Vector3 toGoto = (gotoPoint - transform.position);
-        //if (toGoto.magnitude > 0.2f)
-        //{
-        //    cc.Move(toGoto.normalized * Time.deltaTime);
-        //}
-
-
-
-        //if (takeInput)
-        //    ProcessInput();
-        //else
-        //cc.Move(Useful.RandomVector2Direction() * Time.deltaTime);
     }
 
 

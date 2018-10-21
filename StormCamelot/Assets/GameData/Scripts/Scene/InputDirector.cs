@@ -7,6 +7,8 @@ using Chronos;
 public class InputDirector : MonoBehaviour
 {
     public float soldierSelectionRange = 3f;
+    public float soldierNoActionRange = 1f;
+
 
     private List<SoldierAgent> soldiers;
     private SoldierAgent soldierSelected;
@@ -22,6 +24,14 @@ public class InputDirector : MonoBehaviour
         soldiers = Object.FindObjectsOfType<SoldierAgent>().ToList();
         smoothCamera = Object.FindObjectOfType<SmoothCamera3D>();
         rootClock = Timekeeper.instance.Clock("Root");
+
+        foreach(SoldierAgent s in soldiers)
+        {
+            s.aimMin = soldierNoActionRange;
+            s.aimMax = soldierSelectionRange;
+            s.moveTriggerRange = soldierSelectionRange;
+        }
+
     }
 
     private void Update()
@@ -93,13 +103,15 @@ public class InputDirector : MonoBehaviour
     }
 
 
-    private void SelectSoldier(SoldierAgent soldierToSelect)
+    private void SelectSoldier(SoldierAgent newSelectedSoldier)
     {
-        Debug.Log("Soldier selected: " + soldierToSelect.name);
         if (soldierSelected)
             soldierSelected.showDebug = false;
 
-        soldierSelected = soldierToSelect;
+
+        Debug.Log("Soldier selected: " + newSelectedSoldier.name);
+
+        soldierSelected = newSelectedSoldier;
         soldierSelected.showDebug = true;
 
         rootClock.localTimeScale = 0f;
@@ -113,6 +125,7 @@ public class InputDirector : MonoBehaviour
 
         if (dir.magnitude > soldierSelectionRange)
         {
+            //we're moving, start time and move
             rootClock.localTimeScale = 1f;
             soldierSelected.ClearAiming();
             soldierSelected.MoveIn(dir);
@@ -120,8 +133,13 @@ public class InputDirector : MonoBehaviour
         }
         else
         {
+            //we're not moving, stop time 
             rootClock.localTimeScale = 0f;
-            soldierSelected.AimIn(dir);
+
+            if (dir.magnitude > soldierNoActionRange)
+                soldierSelected.AimIn(dir);
+            else
+                soldierSelected.ClearAiming();
         }
     }
 
