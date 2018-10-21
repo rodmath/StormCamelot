@@ -4,7 +4,8 @@ using UnityEngine;
 using Vectrosity;
 using Chronos;
 
-
+[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(Timeline))]
 public class SoldierAgent : MonoBehaviour
 {
     private CharacterController cc;
