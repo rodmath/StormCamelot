@@ -8,18 +8,12 @@ using Chronos;
 [RequireComponent(typeof(Timeline))]
 public class SoldierAgent : MonoBehaviour
 {
-    private CharacterController cc;
-    private Timeline time;
+    [Header("Inspector setup variables")]
+    public SpriteRenderer actionRadius;
+    public Transform actionPoint;
 
-    public Vector3 aimingPoint;
-
-    public bool takeInput = false;
-    public bool showDebug = true;
-
-    //[Header("Input stuff")]
-    private VectorLine aimMinLine;
-    private VectorLine aimMaxLine;
-    private VectorLine moveTriggerLine;
+    [Header("Weaponary")]
+    public Projectile projectile;
 
     [Header("Move and Aim stuff")]
     public Color aimColour = Color.blue;
@@ -31,23 +25,51 @@ public class SoldierAgent : MonoBehaviour
     public float maxSpeed = 4;
     public float drag = 0.05f;
 
-    [Header("Mouse distance limits")]
-    public float aimMin = 1f;
-    public float aimMax = 2f;
-    public float moveTriggerRange = 3f;
+    [Header("Input distance limits - set by director")]
+    private float aimMin = 1f;
+    private float aimMax = 2f;
+    private float moveTriggerRange = 3f;
 
+
+
+    private VectorLine aimMinLine;
+    private VectorLine aimMaxLine;
+    private VectorLine moveTriggerLine;
     private VectorLine aimLine;
     private VectorLine moveLine, currentMoveLine;
-    [SerializeField]
     private float speed;
     private float speedChange;
+    private Vector3 aimingPoint;
 
+
+
+    private CharacterController cc;
+    private Timeline time;
+
+    public bool ShowSelected { set { actionRadius.enabled = value; } }
 
     void Start()
     {
         cc = GetComponent<CharacterController>();
         time = GetComponent<Timeline>();
+        SetupLines();
+        aimingPoint = actionPoint.position;
+        actionRadius.enabled = false;
+        //if (projectile) GripProjectile(projectile);
+    }
 
+    public void SetupInput(float min, float max, float move)
+    {
+        aimMin = min;
+        aimMax = max;
+        moveTriggerRange = move;
+        actionRadius.transform.localScale = Vector3.one * move;
+    }
+
+
+
+    private void SetupLines()
+    {
         aimMinLine = new VectorLine("Min aim limit line", new List<Vector3>(64), 1);
         aimMinLine.Draw3DAuto();
 
@@ -59,30 +81,29 @@ public class SoldierAgent : MonoBehaviour
 
 
         aimLine = new VectorLine("Aim line", new List<Vector3>(), aimWidth);
-        aimLine.points3.Add(transform.position);
-        aimLine.points3.Add(transform.position);
+        aimLine.points3.Add(transform.position + Vector3.up);
+        aimLine.points3.Add(transform.position + Vector3.up);
         aimLine.color = aimColour;
         aimLine.Draw3DAuto();
 
         moveLine = new VectorLine("Move line", new List<Vector3>(), aimWidth);
-        moveLine.points3.Add(transform.position);
-        moveLine.points3.Add(transform.position);
+        moveLine.points3.Add(transform.position + Vector3.up);
+        moveLine.points3.Add(transform.position + Vector3.up);
         moveLine.color = moveColour;
         moveLine.Draw3DAuto();
 
         currentMoveLine = new VectorLine("Current Move line", new List<Vector3>(), aimWidth);
-        currentMoveLine.points3.Add(transform.position);
-        currentMoveLine.points3.Add(transform.position);
-        currentMoveLine.points3.Add(transform.position);
+        currentMoveLine.points3.Add(transform.position + Vector3.up);
+        currentMoveLine.points3.Add(transform.position + Vector3.up);
+        currentMoveLine.points3.Add(transform.position + Vector3.up);
         currentMoveLine.color = Color.yellow;
         currentMoveLine.lineType = LineType.Continuous;
         currentMoveLine.SetWidth(aimWidth * 3f, 0);
-        currentMoveLine.SetWidth(aimWidth, 1); 
+        currentMoveLine.SetWidth(aimWidth, 1);
         currentMoveLine.Draw3DAuto();
 
-        aimingPoint = transform.position;
-    }
 
+    }
 
     public void ClearAiming()
     {
@@ -101,7 +122,7 @@ public class SoldierAgent : MonoBehaviour
         float dotNormalised = (dot + 1f) / 2f;  //should b 1 = same direction, 0 = opposite direction
         float aimLengthFactor = dotNormalised.Clamp(1f, 0.3f);
 
-        aimingPoint = transform.position + (aimVector * aimLengthFactor * 4f);
+        aimingPoint = actionPoint.position + (aimVector * aimLengthFactor * 4f);
 
     }
 
@@ -148,8 +169,7 @@ public class SoldierAgent : MonoBehaviour
 
         LinesUpdate();
 
-       //reset aiming and assume slowing down for next frame
-        aimingPoint = transform.position;
+        //assume slowing down for next frame
         speedChange = -deceleration;
 
     }
@@ -161,7 +181,7 @@ public class SoldierAgent : MonoBehaviour
         currentMoveLine.points3[1] = transform.position + (transform.forward * speed);
         currentMoveLine.points3[2] = transform.position + (transform.forward * maxSpeed);
 
-        aimLine.points3[0] = transform.position;
+        aimLine.points3[0] = actionPoint.position;
         aimLine.points3[1] = aimingPoint;
         aimLine.color = Color.red;
 
@@ -170,78 +190,71 @@ public class SoldierAgent : MonoBehaviour
         moveTriggerLine.MakeCircle(transform.position, transform.up, moveTriggerRange);
 
 
-        //debug lines around aiming
-        if (showDebug)
-        {
-            aimMinLine.color = Color.blue;
-            aimMaxLine.color = Color.blue;
-            moveTriggerLine.color = Color.blue;
-        }
-        else
-        {
-            aimMinLine.color = Color.clear;
-            aimMaxLine.color = Color.clear;
-            moveTriggerLine.color = Color.clear;
-        }
-
-
+        ////debug lines around aiming
+        //if (showDebug)
+        //{
+        //    aimMinLine.color = Color.blue;
+        //    aimMaxLine.color = Color.blue;
+        //    moveTriggerLine.color = Color.blue;
+        //}
+        //else
+        //{
+        //    aimMinLine.color = Color.clear;
+        //    aimMaxLine.color = Color.clear;
+        //    moveTriggerLine.color = Color.clear;
+        //}
     }
 
 
-    private void ProcessInput()
+
+    public void GripProjectile(Projectile proj)
     {
-        if (showDebug)
+        if (!projectile)
         {
-            aimMinLine.MakeCircle(transform.position, transform.up, aimMin);
-            aimMaxLine.MakeCircle(transform.position, transform.up, aimMax);
-            moveTriggerLine.MakeCircle(transform.position, transform.up, moveTriggerRange);
+            projectile = proj;
+            projectile.held = true;
+            projectile.transform.SetParent(transform);
+            projectile.transform.localPosition = Vector3.right * 1f;
+            projectile.transform.forward = transform.up;
         }
-
-        if (Input.GetMouseButton(0))
-        {
-            //get the distance from the mouse click to this transform
-            // this creates a horizontal plane passing through this object's center
-            Plane plane = new Plane(Vector3.up, transform.position);
-            // create a ray from the mousePosition
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-
-            // plane.Raycast returns the distance from the ray start to the hit point
-            float distance;
-            if (plane.Raycast(ray, out distance))
-            {
-
-                // some point of the plane was hit - get its coordinates
-                Vector3 hitpoint = ray.GetPoint(distance);
-
-                // figure out based on the input where we want to aim
-                Vector3 aimP = transform.position - hitpoint;
-                transform.rotation = Quaternion.LookRotation(aimP);
-
-                //if less than aim distance, just look
-                if (aimP.magnitude < aimMin)
-                    aimLine.color = Color.clear;
-
-                //if in aim area, proportionally put point
-                else if (aimP.magnitude < aimMax)
-                    aimLine.color = Color.white;
-
-                //if in move max aim area, put max aim point
-                else if (aimP.magnitude < moveTriggerRange)
-                    aimP = aimP.normalized * aimMax;
-
-                //if beyon move range; move
-                else
-                {
-                    aimLine.color = Color.clear;
-                    cc.Move(aimP * Time.deltaTime);
-                }
-
-
-
-                aimLine.points3[0] = transform.position;
-                aimLine.points3[1] = transform.position + aimP;
-            }
-        }
-
     }
+
+
+    public void LaunchProjectile()
+    {
+        if (projectile)
+        {
+            projectile.held = false;
+            projectile.transform.SetParent(null);
+            projectile.transform.position = actionPoint.position;
+            projectile.transform.forward = (aimingPoint - actionPoint.position);
+            projectile.Launch(15f, gameObject.transform);
+
+            projectile = null;
+        }
+    }
+
+
+    private void OnTriggerEnter(Collider other)
+    {
+        Projectile proj = other.GetComponent<Projectile>();
+        if (proj)
+        {
+            if (projectile)
+                Debug.Log("On Projectile, but can't pick up as is already holding one");
+            else
+                GripProjectile(proj);
+        }
+    }
+
+    //        else
+    //    {
+    //        SoldierAgent soldierAgent = hitCol.GetComponentInParent<SoldierAgent>();
+
+    //        if (soldierAgent && soldierAgent.projectile==null && owner==null)
+    //        {
+
+    //            soldierAgent.GripProjectile(this);
+    //}
+
 }

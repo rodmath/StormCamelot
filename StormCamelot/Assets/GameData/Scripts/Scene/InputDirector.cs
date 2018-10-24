@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Chronos;
+using Vectrosity;
 
 public class InputDirector : MonoBehaviour
 {
     public float soldierSelectionRange = 3f;
     public float soldierNoActionRange = 1f;
-
 
     private List<SoldierAgent> soldiers;
     private SoldierAgent soldierSelected;
@@ -27,9 +27,7 @@ public class InputDirector : MonoBehaviour
 
         foreach(SoldierAgent s in soldiers)
         {
-            s.aimMin = soldierNoActionRange;
-            s.aimMax = soldierSelectionRange;
-            s.moveTriggerRange = soldierSelectionRange;
+            s.SetupInput(soldierNoActionRange, soldierSelectionRange, soldierSelectionRange);
         }
 
     }
@@ -42,8 +40,6 @@ public class InputDirector : MonoBehaviour
 
             if (Input.GetMouseButtonDown(0))
                 StartClick();
-            else if (Input.GetMouseButtonUp(0))
-                rootClock.localTimeScale = 1;
             else
             {
                 //mouse is down, but not being moved up or down this frame
@@ -53,6 +49,8 @@ public class InputDirector : MonoBehaviour
                     UpdateCameraPanControl();
             }
         }
+        else if (Input.GetMouseButtonUp(0))
+            EndClick();
         else
         {
             if (Input.GetKeyDown("1"))
@@ -103,16 +101,26 @@ public class InputDirector : MonoBehaviour
     }
 
 
+    private void EndClick()
+    {
+        //note uses last frame
+        Vector3 dir = soldierSelected.transform.position - clickPos;
+        dir.y = 0f;
+
+        if (dir.magnitude < soldierSelectionRange && dir.magnitude > soldierNoActionRange)
+            soldierSelected.LaunchProjectile();
+        
+        soldierSelected.ClearAiming();
+    }
+
+
     private void SelectSoldier(SoldierAgent newSelectedSoldier)
     {
         if (soldierSelected)
-            soldierSelected.showDebug = false;
-
-
-        Debug.Log("Soldier selected: " + newSelectedSoldier.name);
+            soldierSelected.ShowSelected = false;
 
         soldierSelected = newSelectedSoldier;
-        soldierSelected.showDebug = true;
+        soldierSelected.ShowSelected = true;
 
         rootClock.localTimeScale = 0f;
         smoothCamera.target = soldierSelected.transform;
