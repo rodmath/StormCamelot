@@ -27,7 +27,7 @@ public class Projectile : MonoBehaviour {
 
     }
 
-    private void IgnoreCollisions(bool ignore = true)
+    private void IgnoreCollisions(bool ignore)
     {
         Collider thisCol = GetComponent<Collider>();
 

@@ -25,7 +25,7 @@ public class InputDirector : MonoBehaviour
         smoothCamera = Object.FindObjectOfType<SmoothCamera3D>();
         rootClock = Timekeeper.instance.Clock("Root");
 
-        foreach(SoldierAgent s in soldiers)
+        foreach (SoldierAgent s in soldiers)
         {
             s.SetupInput(soldierNoActionRange, soldierSelectionRange, soldierSelectionRange);
         }
@@ -103,14 +103,17 @@ public class InputDirector : MonoBehaviour
 
     private void EndClick()
     {
-        //note uses last frame
-        Vector3 dir = soldierSelected.transform.position - clickPos;
-        dir.y = 0f;
+        if (soldierSelected)
+        {
+            //note uses last frame
+            Vector3 dir = soldierSelected.transform.position - clickPos;
+            dir.y = 0f;
 
-        if (dir.magnitude < soldierSelectionRange && dir.magnitude > soldierNoActionRange)
-            soldierSelected.LaunchProjectile();
-        
-        soldierSelected.ClearAiming();
+            if (dir.magnitude < soldierSelectionRange && dir.magnitude > soldierNoActionRange)
+                soldierSelected.LaunchProjectile();
+
+            soldierSelected.ClearAiming();
+        }
     }
 
 

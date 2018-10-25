@@ -214,7 +214,7 @@ public class SoldierAgent : MonoBehaviour
             projectile = proj;
             projectile.held = true;
             projectile.transform.SetParent(transform);
-            projectile.transform.localPosition = Vector3.right * 1f;
+            projectile.transform.position = actionPoint.position;
             projectile.transform.forward = transform.up;
         }
     }
@@ -240,10 +240,17 @@ public class SoldierAgent : MonoBehaviour
         Projectile proj = other.GetComponent<Projectile>();
         if (proj)
         {
-            if (projectile)
-                Debug.Log("On Projectile, but can't pick up as is already holding one");
+            if (proj.held)
+            {
+                if (projectile)
+                    Debug.Log("On Projectile, but can't pick up as is already holding one");
+                else
+                    GripProjectile(proj);
+            }
             else
-                GripProjectile(proj);
+            {
+                Destroy(gameObject);
+            }
         }
     }
 
