@@ -11,9 +11,15 @@ public class SoldierAgent : MonoBehaviour
     [Header("Inspector setup variables")]
     public SpriteRenderer actionRadius;
     public Transform actionPoint;
+    public Transform head;
+    public Transform body;
+    public Transform legs;
+    public Collider pickupCollider;
 
     [Header("Weaponary")]
     public Projectile projectile;
+    public float throwForce = 30f;
+    public float throwAngle = 15f;
 
     [Header("Move and Aim stuff")]
     public Color aimColour = Color.blue;
@@ -24,6 +30,7 @@ public class SoldierAgent : MonoBehaviour
     public float agility = 0.1f;
     public float maxSpeed = 4;
     public float drag = 0.05f;
+
 
     [Header("Input distance limits - set by director")]
     private float aimMin = 1f;
@@ -39,7 +46,7 @@ public class SoldierAgent : MonoBehaviour
     private VectorLine moveLine, currentMoveLine;
     private float speed;
     private float speedChange;
-    private Vector3 aimingPoint;
+    private Vector3 aimingVector;
 
 
 
@@ -53,7 +60,7 @@ public class SoldierAgent : MonoBehaviour
         cc = GetComponent<CharacterController>();
         time = GetComponent<Timeline>();
         SetupLines();
-        aimingPoint = actionPoint.position;
+        aimingVector = Vector3.zero;
         actionRadius.enabled = false;
         //if (projectile) GripProjectile(projectile);
     }
@@ -70,29 +77,29 @@ public class SoldierAgent : MonoBehaviour
 
     private void SetupLines()
     {
-        aimMinLine = new VectorLine("Min aim limit line", new List<Vector3>(64), 1);
+        aimMinLine = new VectorLine("Line: Min aim limit", new List<Vector3>(64), 1);
         aimMinLine.Draw3DAuto();
 
-        aimMaxLine = new VectorLine("Max aim limit line", new List<Vector3>(64), 1);
+        aimMaxLine = new VectorLine("Line: Max aim limit", new List<Vector3>(64), 1);
         aimMaxLine.Draw3DAuto();
 
-        moveTriggerLine = new VectorLine("Move trigger line", new List<Vector3>(64), 1);
+        moveTriggerLine = new VectorLine("Line: Move trigger", new List<Vector3>(64), 1);
         moveTriggerLine.Draw3DAuto();
 
 
-        aimLine = new VectorLine("Aim line", new List<Vector3>(), aimWidth);
+        aimLine = new VectorLine("Line: Aim", new List<Vector3>(), aimWidth);
         aimLine.points3.Add(transform.position + Vector3.up);
         aimLine.points3.Add(transform.position + Vector3.up);
         aimLine.color = aimColour;
         aimLine.Draw3DAuto();
 
-        moveLine = new VectorLine("Move line", new List<Vector3>(), aimWidth);
+        moveLine = new VectorLine("Line: Move", new List<Vector3>(), aimWidth);
         moveLine.points3.Add(transform.position + Vector3.up);
         moveLine.points3.Add(transform.position + Vector3.up);
         moveLine.color = moveColour;
         moveLine.Draw3DAuto();
 
-        currentMoveLine = new VectorLine("Current Move line", new List<Vector3>(), aimWidth);
+        currentMoveLine = new VectorLine("Line: Current Move", new List<Vector3>(), aimWidth);
         currentMoveLine.points3.Add(transform.position + Vector3.up);
         currentMoveLine.points3.Add(transform.position + Vector3.up);
         currentMoveLine.points3.Add(transform.position + Vector3.up);
@@ -105,26 +112,30 @@ public class SoldierAgent : MonoBehaviour
 
     }
 
-    public void ClearAiming()
-    {
-        aimingPoint = transform.position;
-        aimLine.points3[0] = transform.position;
-        aimLine.points3[1] = transform.position;
-        aimLine.color = Color.clear;
-    }
-
 
     public void AimIn(Vector3 aimDirection)
     {
-        Vector3 aimVector = aimDirection.normalized;
+        aimingVector = aimDirection.normalized;
+        aimLine.color = Color.red;
 
-        float dot = Vector3.Dot(aimVector, transform.forward);
-        float dotNormalised = (dot + 1f) / 2f;  //should b 1 = same direction, 0 = opposite direction
-        float aimLengthFactor = dotNormalised.Clamp(1f, 0.3f);
+        if (projectile)
+        {
+            projectile.transform.position = actionPoint.position + transform.right;
+            projectile.transform.forward = aimingVector;
+            projectile.transform.Rotate(-throwAngle, 0f, 0f, Space.Self);
+        }
 
-        aimingPoint = actionPoint.position + (aimVector * aimLengthFactor * 4f);
 
+        //aimingPoint = actionPoint.position + (aimVector * aimLengthFactor * 4f);
+        //aimLine.color = Color.red;
     }
+
+    public void ClearAiming()
+    {
+        aimingVector = Vector3.zero;
+        aimLine.color = Color.clear;
+    }
+
 
 
 
@@ -151,22 +162,64 @@ public class SoldierAgent : MonoBehaviour
             if (dot > 0.5f)
                 speedChange = acceleration;
         }
-
-
     }
 
 
+    public void GripProjectile(Projectile proj)
+    {
+        if (!projectile)
+        {
+            projectile = proj;
+            projectile.held = true;
+            projectile.transform.SetParent(transform);
+            projectile.transform.position = actionPoint.position;
+            projectile.transform.forward = transform.up;
+        }
+    }
+
+
+    public Transform LaunchProjectile()
+    {
+        if (projectile)
+        {
+            projectile.transform.position = actionPoint.position;
+            projectile.transform.forward = aimingVector;
+            projectile.transform.Rotate(-throwAngle, 0f, 0f, Space.Self); 
+            projectile.Launch(throwForce, gameObject);
+
+            Transform proj = projectile.transform;
+            projectile = null;
+            return proj;
+        }
+        else
+            return null;
+    }
 
 
 
 
     void Update()
     {
+        //aiming our head and body
+        if (aimingVector.magnitude > 0)
+        {
+            head.forward = Vector3.Slerp(head.forward, aimingVector, 0.2f);
+        }
+
         //if we have some speed we move
         speed = (speed + (speedChange * time.deltaTime)).Clamp(0f, maxSpeed);
-        if (speed.Abs() > 0.1f)
-            cc.Move(transform.forward * time.deltaTime * speed);
 
+        if (speed.Abs() > 0.1f)
+        {
+            cc.Move(transform.forward * time.deltaTime * speed);
+            head.forward = transform.forward;
+            pickupCollider.enabled = false;
+        }
+        else
+        {
+            pickupCollider.enabled = true;
+
+        }
         LinesUpdate();
 
         //assume slowing down for next frame
@@ -181,9 +234,13 @@ public class SoldierAgent : MonoBehaviour
         currentMoveLine.points3[1] = transform.position + (transform.forward * speed);
         currentMoveLine.points3[2] = transform.position + (transform.forward * maxSpeed);
 
+        float dot = Vector3.Dot(head.forward, transform.forward);
+        float dotNormalised = (dot + 1f) / 2f;  //should b 1 = same direction, 0 = opposite direction
+        float aimLengthFactor = dotNormalised.Clamp(1f, 0.5f);
+
+
         aimLine.points3[0] = actionPoint.position;
-        aimLine.points3[1] = aimingPoint;
-        aimLine.color = Color.red;
+        aimLine.points3[1] = actionPoint.position + (aimingVector * aimLengthFactor * 4f);
 
         aimMinLine.MakeCircle(transform.position, transform.up, aimMin);
         aimMaxLine.MakeCircle(transform.position, transform.up, aimMax);
@@ -207,52 +264,37 @@ public class SoldierAgent : MonoBehaviour
 
 
 
-    public void GripProjectile(Projectile proj)
-    {
-        if (!projectile)
-        {
-            projectile = proj;
-            projectile.held = true;
-            projectile.transform.SetParent(transform);
-            projectile.transform.position = actionPoint.position;
-            projectile.transform.forward = transform.up;
-        }
-    }
-
-
-    public void LaunchProjectile()
-    {
-        if (projectile)
-        {
-            projectile.held = false;
-            projectile.transform.SetParent(null);
-            projectile.transform.position = actionPoint.position;
-            projectile.transform.forward = (aimingPoint - actionPoint.position);
-            projectile.Launch(15f, gameObject.transform);
-
-            projectile = null;
-        }
-    }
 
 
     private void OnTriggerEnter(Collider other)
     {
-        Projectile proj = other.GetComponent<Projectile>();
-        if (proj)
+        if (!projectile)
         {
-            if (proj.held)
-            {
-                if (projectile)
-                    Debug.Log("On Projectile, but can't pick up as is already holding one");
-                else
-                    GripProjectile(proj);
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
+            Projectile proj = other.GetComponentInParent<Projectile>();
+            //we can only pick it up if it is held in something 
+            if (proj && proj.held)
+                GripProjectile(proj);
         }
     }
+
+    //private void OnTriggerEnter(Collider other)
+    //{
+    //    //drop out if we're not picking up
+    //    if (!pickupCollider.enabled)
+    //        return;
+
+    //    Projectile proj = other.GetComponentInParent<Projectile>();
+    //    if (proj)
+    //    {
+    //        if (proj.held)
+    //        {
+    //            if (projectile)
+    //                Debug.Log("On Projectile, but can't pick up as is already holding one");
+    //            else
+    //                GripProjectile(proj);
+    //        }
+    //    }
+    //}
 
     //        else
     //    {

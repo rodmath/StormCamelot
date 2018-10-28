@@ -110,7 +110,13 @@ public class InputDirector : MonoBehaviour
             dir.y = 0f;
 
             if (dir.magnitude < soldierSelectionRange && dir.magnitude > soldierNoActionRange)
-                soldierSelected.LaunchProjectile();
+            {
+                rootClock.localTimeScale = 1f;
+                Transform projectile = soldierSelected.LaunchProjectile();
+                SelectSoldier(null);
+                smoothCamera.target = projectile;
+            }
+                
 
             soldierSelected.ClearAiming();
         }
@@ -122,11 +128,18 @@ public class InputDirector : MonoBehaviour
         if (soldierSelected)
             soldierSelected.ShowSelected = false;
 
-        soldierSelected = newSelectedSoldier;
-        soldierSelected.ShowSelected = true;
+        if (newSelectedSoldier)
+        {
+            soldierSelected = newSelectedSoldier;
+            soldierSelected.ShowSelected = true;
+            rootClock.localTimeScale = 0.001f;
+            smoothCamera.target = soldierSelected.transform;
+        }
+        else
+            rootClock.localTimeScale = 1f;
 
-        rootClock.localTimeScale = 0f;
-        smoothCamera.target = soldierSelected.transform;
+
+
     }
 
     private void UpdateSoldierControl()
@@ -145,7 +158,7 @@ public class InputDirector : MonoBehaviour
         else
         {
             //we're not moving, stop time 
-            rootClock.localTimeScale = 0f;
+            rootClock.localTimeScale = 0.001f;
 
             if (dir.magnitude > soldierNoActionRange)
                 soldierSelected.AimIn(dir);

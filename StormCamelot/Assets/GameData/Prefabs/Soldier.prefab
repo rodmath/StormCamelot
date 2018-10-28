@@ -90,8 +90,9 @@ GameObject:
   - component: {fileID: 143155238827485652}
   - component: {fileID: 114515596804396152}
   - component: {fileID: 54137939261367284}
+  - component: {fileID: 114102884146857162}
   m_Layer: 0
-  m_Name: Soldier (0)
+  m_Name: Soldier
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -119,8 +120,8 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1239808522276770}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.8, z: 0.5}
-  m_LocalScale: {x: 0.8, y: 0.2, z: 0.2}
+  m_LocalPosition: {x: 0, y: 1.8, z: 0}
+  m_LocalScale: {x: 0.6, y: 0.2, z: 0.2}
   m_Children: []
   m_Father: {fileID: 4909271178234336}
   m_RootOrder: 0
@@ -145,8 +146,8 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1144226422512432}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 0.5, z: 0}
+  m_LocalScale: {x: 1, y: 0.8, z: 0.5}
   m_Children: []
   m_Father: {fileID: 4909271178234336}
   m_RootOrder: 1
@@ -171,7 +172,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1403214274828116}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5.75, y: 0, z: 2.73}
+  m_LocalPosition: {x: -5.75, y: 0, z: -5.3999996}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4178448372636490}
@@ -294,6 +295,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 1
+--- !u!114 &114102884146857162
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1403214274828116}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e867f541b971342fa8ecf836862e66ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prefabOfDeadObject: {fileID: 1951992835331262, guid: 89fc172778db04920b75b4afa6cbdecf,
+    type: 2}
 --- !u!114 &114515596804396152
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -323,6 +337,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   actionRadius: {fileID: 212382342582318536}
   actionPoint: {fileID: 4730738010739800}
+  pickupCollider: {fileID: 135192380271143534}
   projectile: {fileID: 0}
   aimColour: {r: 0, g: 0, b: 0, a: 1}
   moveColour: {r: 0, g: 0.15004349, b: 1, a: 1}
