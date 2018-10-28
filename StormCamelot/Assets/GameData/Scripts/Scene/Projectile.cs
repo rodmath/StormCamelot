@@ -39,7 +39,7 @@ public class Projectile : MonoBehaviour
 
         time.rigidbody.isKinematic = false;
         //time.rigidbody.AddForce(transform.forward * force, ForceMode.Impulse);
-        //time.rigidbody.velocity = transform.forward * force;
+        time.rigidbody.velocity = transform.forward * force;
         speed = force;
 
         inFlight = true;
@@ -98,7 +98,7 @@ public class Projectile : MonoBehaviour
     private void OnCollisionEnter(Collision col)
     {
         Collider other = col.contacts[0].otherCollider;
-        SoldierAgent agent = other.GetComponentInParent<SoldierAgent>();
+        Agent agent = other.GetComponentInParent<Agent>();
 
         //if we are not held, we are hitting something
         if (!held)
@@ -109,16 +109,28 @@ public class Projectile : MonoBehaviour
             Life life = other.GetComponentInParent<Life>();
             if (life)
             {
-                transform.SetParent(life.Kill().transform);
+                //kill obj
+                GameObject deadObj = life.Kill();
+
+                //apply force in direction of our velocity to dead obj
+                Vector3 finalBlowForce = time.rigidbody.velocity;
+        
+                Timeline deadObjTime = deadObj.GetComponent<Timeline>();
+                if (deadObjTime)
+                    deadObjTime.rigidbody.AddForce(time.rigidbody.velocity);
+
+                //and impale us onto obj
+                transform.SetParent(deadObj.transform);
             }
             else
             {
                 transform.SetParent(other.transform.parent);
+                time.rigidbody.isKinematic = true;
             }
 
             time.rigidbody.velocity = Vector3.zero;
             time.rigidbody.angularVelocity = Vector3.zero; 
-            time.rigidbody.isKinematic = true;
+
             held = true;
             owner = gameObject;
         }

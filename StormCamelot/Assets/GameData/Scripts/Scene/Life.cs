@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Chronos;
 
 public class Life : MonoBehaviour {
 
@@ -12,7 +13,6 @@ public class Life : MonoBehaviour {
 
         //now kill this one
         gameObject.SetActive(false);
-        //gameObject.transform.position = new Vector3(100000f, 0f, 10000f);
 
         return deadObject;
     }

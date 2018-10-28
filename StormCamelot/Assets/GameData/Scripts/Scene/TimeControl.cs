@@ -11,25 +11,25 @@ public class TimeControl : MonoBehaviour
         Clock clock = Timekeeper.instance.Clock("Root");
 
         //// Change its time scale on key press
-        //if (Input.GetKeyDown(KeyCode.Alpha1))
-        //{
-        //    clock.localTimeScale = -1; // Rewind
-        //}
-        //else if (Input.GetKeyDown(KeyCode.Alpha2))
-        //{
-        //    clock.localTimeScale = 0; // Pause
-        //}
-        //else if (Input.GetKeyDown(KeyCode.Alpha3))
-        //{
-        //    clock.localTimeScale = 0.5f; // Slow
-        //}
-        //else if (Input.GetKeyDown(KeyCode.Alpha4))
-        //{
-        //    clock.localTimeScale = 1; // Normal
-        //}
-        //else if (Input.GetKeyDown(KeyCode.Alpha5))
-        //{
-        //    clock.localTimeScale = 2; // Accelerate
-        //}
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            clock.localTimeScale = -1; // Rewind
+        }
+        else if (Input.GetKeyDown(KeyCode.W))
+        {
+            clock.localTimeScale = 0; // Pause
+        }
+        else if (Input.GetKeyDown(KeyCode.E))
+        {
+            clock.localTimeScale = 0.5f; // Slow
+        }
+        else if (Input.GetKeyDown(KeyCode.R))
+        {
+            clock.localTimeScale = 1; // Normal
+        }
+        else if (Input.GetKeyDown(KeyCode.T))
+        {
+            clock.localTimeScale = 2; // Accelerate
+        }
     }
 }

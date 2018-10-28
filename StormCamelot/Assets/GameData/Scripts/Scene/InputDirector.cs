@@ -10,10 +10,13 @@ public class InputDirector : MonoBehaviour
     public float soldierSelectionRange = 3f;
     public float soldierNoActionRange = 1f;
 
-    private List<SoldierAgent> soldiers;
-    private SoldierAgent soldierSelected;
+    private Camera overheadCam;
+    private Camera fpsCam;
+    private List<Agent> soldiers;
+    private Agent soldierSelected;
     private SmoothCamera3D smoothCamera;
     private Clock rootClock;
+    private bool inFPSmode = false;
 
     private Vector3 clickPos;
 
@@ -21,11 +24,12 @@ public class InputDirector : MonoBehaviour
 
     private void Start()
     {
-        soldiers = Object.FindObjectsOfType<SoldierAgent>().ToList();
+        overheadCam = Camera.main;
+        soldiers = Object.FindObjectsOfType<Agent>().ToList();
         smoothCamera = Object.FindObjectOfType<SmoothCamera3D>();
         rootClock = Timekeeper.instance.Clock("Root");
 
-        foreach (SoldierAgent s in soldiers)
+        foreach (Agent s in soldiers)
         {
             s.SetupInput(soldierNoActionRange, soldierSelectionRange, soldierSelectionRange);
         }
@@ -40,10 +44,12 @@ public class InputDirector : MonoBehaviour
 
             if (Input.GetMouseButtonDown(0))
                 StartClick();
-            else
+            else 
             {
                 //mouse is down, but not being moved up or down this frame
-                if (soldierSelected)
+                if (inFPSmode)
+                    UpdateFPSControl();
+                else if (soldierSelected)
                     UpdateSoldierControl();
                 else
                     UpdateCameraPanControl();
@@ -66,22 +72,30 @@ public class InputDirector : MonoBehaviour
 
     private void SetClickPoint()
     {
-        ////Find out where we have clicked
-        Plane plane = new Plane(Vector3.up, transform.position);
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        float rayDist;
-        if (plane.Raycast(ray, out rayDist))
+        if (inFPSmode)
+            clickPos = fpsCam.ScreenToViewportPoint(Input.mousePosition);
+        else
         {
-            clickPos = ray.GetPoint(rayDist);
+            Plane plane = new Plane(Vector3.up, transform.position);
+            Ray ray = overheadCam.ScreenPointToRay(Input.mousePosition);
+            float rayDist;
+            if (plane.Raycast(ray, out rayDist))
+            {
+                clickPos = ray.GetPoint(rayDist);
+            }
         }
     }
 
     private void StartClick()
     {
-        SoldierAgent soldierToSelect = null;
+        if (inFPSmode && soldierSelected)
+            return;
+
+
+        Agent soldierToSelect = null;
         float dist;
         float minDist = soldierSelectionRange;
-        foreach (SoldierAgent soldier in soldiers)
+        foreach (Agent soldier in soldiers)
         {
             dist = (clickPos - soldier.transform.position).magnitude;
             if (dist < soldierSelectionRange)
@@ -103,6 +117,21 @@ public class InputDirector : MonoBehaviour
 
     private void EndClick()
     {
+        if (inFPSmode)
+        {
+            rootClock.localTimeScale = 1f;
+            Transform projectile = soldierSelected.LaunchProjectile();
+            smoothCamera.target = projectile;
+            soldierSelected.ClearAiming();
+            fpsCam.enabled = false;
+            overheadCam.enabled = true;
+            inFPSmode = false;
+
+            SelectSoldier(null);
+            return;
+        }
+
+
         if (soldierSelected)
         {
             //note uses last frame
@@ -111,19 +140,17 @@ public class InputDirector : MonoBehaviour
 
             if (dir.magnitude < soldierSelectionRange && dir.magnitude > soldierNoActionRange)
             {
-                rootClock.localTimeScale = 1f;
-                Transform projectile = soldierSelected.LaunchProjectile();
-                SelectSoldier(null);
-                smoothCamera.target = projectile;
+                fpsCam.enabled = true;
+                overheadCam.enabled = false;
+                inFPSmode = true;
             }
-                
-
-            soldierSelected.ClearAiming();
+            else
+                soldierSelected.ClearAiming();
         }
     }
 
 
-    private void SelectSoldier(SoldierAgent newSelectedSoldier)
+    private void SelectSoldier(Agent newSelectedSoldier)
     {
         if (soldierSelected)
             soldierSelected.ShowSelected = false;
@@ -132,6 +159,7 @@ public class InputDirector : MonoBehaviour
         {
             soldierSelected = newSelectedSoldier;
             soldierSelected.ShowSelected = true;
+            fpsCam = soldierSelected.GetComponentInChildren<Camera>();
             rootClock.localTimeScale = 0.001f;
             smoothCamera.target = soldierSelected.transform;
         }
@@ -168,6 +196,10 @@ public class InputDirector : MonoBehaviour
     }
 
     private void UpdateCameraPanControl()
+    {
+    }
+
+    private void UpdateFPSControl()
     {
     }
 }

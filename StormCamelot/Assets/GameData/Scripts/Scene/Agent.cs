@@ -6,13 +6,14 @@ using Chronos;
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(Timeline))]
-public class SoldierAgent : MonoBehaviour
+public class Agent : MonoBehaviour
 {
     [Header("Inspector setup variables")]
     public SpriteRenderer actionRadius;
     public Transform actionPoint;
     public Transform head;
     public Transform body;
+    public Transform arms;
     public Transform legs;
     public Collider pickupCollider;
 
@@ -118,16 +119,8 @@ public class SoldierAgent : MonoBehaviour
         aimingVector = aimDirection.normalized;
         aimLine.color = Color.red;
 
-        if (projectile)
-        {
-            projectile.transform.position = actionPoint.position + transform.right;
-            projectile.transform.forward = aimingVector;
-            projectile.transform.Rotate(-throwAngle, 0f, 0f, Space.Self);
-        }
+        arms.transform.forward = aimingVector;
 
-
-        //aimingPoint = actionPoint.position + (aimVector * aimLengthFactor * 4f);
-        //aimLine.color = Color.red;
     }
 
     public void ClearAiming()
@@ -141,24 +134,25 @@ public class SoldierAgent : MonoBehaviour
 
     public void MoveIn(Vector3 moveDirection)
     {
-        Vector3 moveVector = moveDirection.normalized;
-        Vector3 turnedVector = Vector3.Slerp(transform.forward, moveVector, agility);
+        Vector3 desiredMoveVector = moveDirection.normalized;
+        Vector3 currentMoveVector = Vector3.Slerp(transform.forward, desiredMoveVector, agility);
 
-        float dot = Vector3.Dot(moveVector, transform.forward);
+        float dot = Vector3.Dot(desiredMoveVector, transform.forward);
 
         //if it's backwards, we slow down to a speed where we can turn
         if (dot < -0.1f)
         {
             speedChange = -deceleration;
             if (speed < 0.1f)
-                transform.rotation = Quaternion.LookRotation(turnedVector);
+                transform.rotation = Quaternion.LookRotation(currentMoveVector);
         }
 
         //if it's not backwards we turn and if mainly forwards, accelerate
         else
         {
             speedChange = 0f;
-            transform.rotation = Quaternion.LookRotation(turnedVector);
+            transform.rotation = Quaternion.LookRotation(currentMoveVector);
+            arms.rotation = Quaternion.LookRotation(currentMoveVector);
             if (dot > 0.5f)
                 speedChange = acceleration;
         }
@@ -171,9 +165,10 @@ public class SoldierAgent : MonoBehaviour
         {
             projectile = proj;
             projectile.held = true;
-            projectile.transform.SetParent(transform);
-            projectile.transform.position = actionPoint.position;
-            projectile.transform.forward = transform.up;
+            projectile.transform.SetParent(actionPoint.transform);
+            projectile.transform.position = actionPoint.position + (actionPoint.right * 0.75f) + (actionPoint.up * 0.25f);
+            projectile.transform.forward = actionPoint.forward;
+
         }
     }
 
@@ -184,7 +179,7 @@ public class SoldierAgent : MonoBehaviour
         {
             projectile.transform.position = actionPoint.position;
             projectile.transform.forward = aimingVector;
-            projectile.transform.Rotate(-throwAngle, 0f, 0f, Space.Self); 
+            projectile.transform.Rotate(-throwAngle, 0f, 0f, Space.Self);
             projectile.Launch(throwForce, gameObject);
 
             Transform proj = projectile.transform;
@@ -234,10 +229,10 @@ public class SoldierAgent : MonoBehaviour
         currentMoveLine.points3[1] = transform.position + (transform.forward * speed);
         currentMoveLine.points3[2] = transform.position + (transform.forward * maxSpeed);
 
-        float dot = Vector3.Dot(head.forward, transform.forward);
-        float dotNormalised = (dot + 1f) / 2f;  //should b 1 = same direction, 0 = opposite direction
-        float aimLengthFactor = dotNormalised.Clamp(1f, 0.5f);
-
+        //float dot = Vector3.Dot(head.forward, transform.forward);
+        //float dotNormalised = (dot + 1f) / 2f;  //should b 1 = same direction, 0 = opposite direction
+        //float aimLengthFactor = dotNormalised.Clamp(1f, 0.5f);
+        float aimLengthFactor = 1f;
 
         aimLine.points3[0] = actionPoint.position;
         aimLine.points3[1] = actionPoint.position + (aimingVector * aimLengthFactor * 4f);
