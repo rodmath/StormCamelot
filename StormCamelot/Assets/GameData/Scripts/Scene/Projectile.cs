@@ -31,6 +31,8 @@ public class Projectile : MonoBehaviour
 
     public void Launch(float force, GameObject pOwner)
     {
+        ActivateTriggers(false);    //make physical
+
         lastPosition = transform.position;
         rot = Random.value * 360;
         spin = Random.Range(30, 80);
@@ -65,6 +67,11 @@ public class Projectile : MonoBehaviour
                 Physics.IgnoreCollision(thisCol, otherCol, ignore);
     }
 
+    private void ActivateTriggers(bool triggerTrue)
+    {
+        foreach (Collider thisCol in GetComponentsInChildren<Collider>())
+            thisCol.isTrigger = triggerTrue;
+    }
 
     void FixedUpdate()
     {
@@ -106,26 +113,34 @@ public class Projectile : MonoBehaviour
             GetComponent<Rigidbody>().MovePosition(col.contacts[0].point);
             IgnoreCollisions(false);
 
+
             Life life = other.GetComponentInParent<Life>();
+            //have we hit something we can kill
             if (life)
             {
                 //kill obj
                 GameObject deadObj = life.Kill();
+                transform.SetParent(deadObj.transform);
 
                 //apply force in direction of our velocity to dead obj
                 Vector3 finalBlowForce = time.rigidbody.velocity;
         
                 Timeline deadObjTime = deadObj.GetComponent<Timeline>();
                 if (deadObjTime)
+                {
+                    deadObj.AddComponent<FixedJoint>().connectedBody = time.rigidbody.component;
                     deadObjTime.rigidbody.AddForce(time.rigidbody.velocity);
+                    ActivateTriggers(false);    //make physical
+                }
+               
 
-                //and impale us onto obj
-                transform.SetParent(deadObj.transform);
             }
+            //if can't kill, just impale and wait as triggers
             else
             {
                 transform.SetParent(other.transform.parent);
                 time.rigidbody.isKinematic = true;
+                ActivateTriggers(true);    //make physical
             }
 
             time.rigidbody.velocity = Vector3.zero;

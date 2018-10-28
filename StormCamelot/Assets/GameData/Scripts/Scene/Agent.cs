@@ -13,8 +13,7 @@ public class Agent : MonoBehaviour
     public Transform actionPoint;
     public Transform head;
     public Transform body;
-    public Transform arms;
-    public Transform legs;
+    public Transform shoulders;
     public Collider pickupCollider;
 
     [Header("Weaponary")]
@@ -119,7 +118,7 @@ public class Agent : MonoBehaviour
         aimingVector = aimDirection.normalized;
         aimLine.color = Color.red;
 
-        arms.transform.forward = aimingVector;
+        shoulders.transform.forward = aimingVector;
 
     }
 
@@ -152,7 +151,7 @@ public class Agent : MonoBehaviour
         {
             speedChange = 0f;
             transform.rotation = Quaternion.LookRotation(currentMoveVector);
-            arms.rotation = Quaternion.LookRotation(currentMoveVector);
+            shoulders.rotation = Quaternion.LookRotation(currentMoveVector);
             if (dot > 0.5f)
                 speedChange = acceleration;
         }
@@ -196,10 +195,10 @@ public class Agent : MonoBehaviour
     void Update()
     {
         //aiming our head and body
-        if (aimingVector.magnitude > 0)
-        {
-            head.forward = Vector3.Slerp(head.forward, aimingVector, 0.2f);
-        }
+        //if (aimingVector.magnitude > 0)
+        //{
+        //    head.forward = Vector3.Slerp(head.forward, aimingVector, 0.2f);
+        //}
 
         //if we have some speed we move
         speed = (speed + (speedChange * time.deltaTime)).Clamp(0f, maxSpeed);
@@ -207,7 +206,6 @@ public class Agent : MonoBehaviour
         if (speed.Abs() > 0.1f)
         {
             cc.Move(transform.forward * time.deltaTime * speed);
-            head.forward = transform.forward;
             pickupCollider.enabled = false;
         }
         else
