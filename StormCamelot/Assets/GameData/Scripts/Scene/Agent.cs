@@ -52,6 +52,7 @@ public class Agent : MonoBehaviour
 
     private CharacterController cc;
     private Timeline time;
+    private Color actionRadiusBaseColour;
 
     public bool ShowSelected { set { actionRadius.enabled = value; } }
 
@@ -62,6 +63,7 @@ public class Agent : MonoBehaviour
         SetupLines();
         aimingVector = Vector3.zero;
         actionRadius.enabled = false;
+        actionRadiusBaseColour = actionRadius.color;
         //if (projectile) GripProjectile(projectile);
     }
 
@@ -162,12 +164,12 @@ public class Agent : MonoBehaviour
     {
         if (!projectile)
         {
-            projectile = proj;
-            projectile.held = true;
-            projectile.transform.SetParent(actionPoint.transform);
-            projectile.transform.position = actionPoint.position + (actionPoint.right * 0.75f) + (actionPoint.up * 0.25f);
-            projectile.transform.forward = actionPoint.forward;
+            Vector3 gripOffset = (actionPoint.right * 0.75f) + (actionPoint.up * 0.25f);
 
+            projectile = proj;
+            projectile.Pickedup(gameObject, actionPoint.transform, gripOffset);
+
+            actionRadius.color = new Color(1f, 0f, 0f, actionRadiusBaseColour.a);
         }
     }
 
@@ -176,6 +178,8 @@ public class Agent : MonoBehaviour
     {
         if (projectile)
         {
+            actionRadius.color = actionRadiusBaseColour; 
+
             projectile.transform.position = actionPoint.position;
             projectile.transform.forward = aimingVector;
             projectile.transform.Rotate(-throwAngle, 0f, 0f, Space.Self);
@@ -183,6 +187,8 @@ public class Agent : MonoBehaviour
 
             Transform proj = projectile.transform;
             projectile = null;
+
+
             return proj;
         }
         else
@@ -264,8 +270,8 @@ public class Agent : MonoBehaviour
         if (!projectile)
         {
             Projectile proj = other.GetComponentInParent<Projectile>();
-            //we can only pick it up if it is held in something 
-            if (proj && proj.held)
+            //we can only pick it up if 
+            if (proj && proj.CanBePickedUp)
                 GripProjectile(proj);
         }
     }

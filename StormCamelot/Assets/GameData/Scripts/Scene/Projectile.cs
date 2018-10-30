@@ -3,17 +3,28 @@ using System.Collections.Generic;
 using UnityEngine;
 using Chronos;
 
+
+
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(Timeline))]
 public class Projectile : MonoBehaviour
 {
-    public Collider impalePoint;
+    private enum ProjectileState
+    {
+        inFlight,
+        carried,
+        impaled,
+    }
+
+    //if we are impaled into something or held by someone the following is true
+    private ProjectileState state = ProjectileState.inFlight;
+    public bool CanBePickedUp { get { return state == ProjectileState.impaled; } }
+
+    //public bool Impaled { get { return state == ProjectileState.impaled; } }
+    //public bool Held { get { return state == ProjectileState.held; } }
 
 
-    public bool held;
-    public bool inFlight;
 
-    private GameObject owner;
     private Timeline time;
 
     private Vector3 lastPosition;
@@ -22,16 +33,58 @@ public class Projectile : MonoBehaviour
     private float spin;
     private float impaleDepth;
 
+    private GameObject _owner;
+    private GameObject Owner
+    {
+        get { return _owner; }
+        set
+        {
+            if (_owner)
+                IgnoreCollisionsWithOwner(false);
+
+            _owner = value;
+            IgnoreCollisionsWithOwner(true);
+        }
+    }
+
+
+
     void Start()
     {
         time = GetComponent<Timeline>();
-        owner = gameObject;
     }
+
+    private void IgnoreCollisionsWithOwner(bool ignore)
+    {
+        foreach (Collider thisCol in GetComponentsInChildren<Collider>())
+            foreach (Collider otherCol in Owner.GetComponentsInChildren<Collider>())
+                Physics.IgnoreCollision(thisCol, otherCol, ignore);
+    }
+
+
+
+
+
+    public void Pickedup(GameObject newOwner, Transform holdPoint, Vector3 gripOffset)
+    {
+        state = ProjectileState.carried;
+
+        //if we are stuck to something, lets "unstick"
+        FixedJoint joint = Owner.GetComponent<FixedJoint>();
+        if (joint) Destroy(joint);
+
+        time.rigidbody.isKinematic = true;
+        transform.position = holdPoint.position + gripOffset;
+        transform.forward = holdPoint.forward;
+        transform.SetParent(holdPoint);
+    }
+
 
 
     public void Launch(float force, GameObject pOwner)
     {
-        ActivateTriggers(false);    //make physical
+        state = ProjectileState.inFlight;
+        Owner = pOwner;
 
         lastPosition = transform.position;
         rot = Random.value * 360;
@@ -40,44 +93,20 @@ public class Projectile : MonoBehaviour
         transform.SetParent(null);
 
         time.rigidbody.isKinematic = false;
-        //time.rigidbody.AddForce(transform.forward * force, ForceMode.Impulse);
         time.rigidbody.velocity = transform.forward * force;
-        speed = force;
-
-        inFlight = true;
-
-        owner = pOwner;
-        IgnoreCollisions(true);
-        held = false;
-    }
-
-    public void CanCollide(bool collidersEnabled)
-    {
-        foreach(Collider col in GetComponents<Collider>())
-        {
-            col.enabled = collidersEnabled;
-        }
     }
 
 
-    private void IgnoreCollisions(bool ignore)
-    {
-        foreach (Collider thisCol in GetComponentsInChildren<Collider>())
-            foreach (Collider otherCol in owner.GetComponentsInChildren<Collider>())
-                Physics.IgnoreCollision(thisCol, otherCol, ignore);
-    }
 
-    private void ActivateTriggers(bool triggerTrue)
-    {
-        foreach (Collider thisCol in GetComponentsInChildren<Collider>())
-            thisCol.isTrigger = triggerTrue;
-    }
+
+
 
     void FixedUpdate()
     {
-        if (!held)
+        if (state == ProjectileState.inFlight)
         {
             transform.forward = Vector3.Slerp(transform.forward, time.rigidbody.velocity.normalized, time.fixedDeltaTime * 5f);
+            lastPosition = transform.position;
 
             //RaycastHit hit;
             //if (Physics.Linecast(lastPosition, transform.position, out hit))
@@ -104,124 +133,42 @@ public class Projectile : MonoBehaviour
 
     private void OnCollisionEnter(Collision col)
     {
+        if (state != ProjectileState.inFlight)
+            return;
+
+        state = ProjectileState.impaled;
+
+        //Fix in position
+        Rigidbody body = GetComponent<Rigidbody>();
+        body.MovePosition(col.contacts[0].point);
+        time.rigidbody.velocity = Vector3.zero;
+        time.rigidbody.angularVelocity = Vector3.zero;
+
+        //Find out what we hit and fix to it or it's dead version
         Collider other = col.contacts[0].otherCollider;
-        Agent agent = other.GetComponentInParent<Agent>();
-
-        //if we are not held, we are hitting something
-        if (!held)
+        Life life = other.GetComponentInParent<Life>();
+        if (life)
         {
-            GetComponent<Rigidbody>().MovePosition(col.contacts[0].point);
-            IgnoreCollisions(false);
+            GameObject deadObj = life.Kill();
+            transform.SetParent(deadObj.transform);
+            Owner = deadObj;
 
 
-            Life life = other.GetComponentInParent<Life>();
-            //have we hit something we can kill
-            if (life)
+            Timeline deadObjTime = deadObj.GetComponent<Timeline>();
+            if (deadObjTime)
             {
-                //kill obj
-                GameObject deadObj = life.Kill();
-                transform.SetParent(deadObj.transform);
-
-                //apply force in direction of our velocity to dead obj
-                Vector3 finalBlowForce = time.rigidbody.velocity;
-        
-                Timeline deadObjTime = deadObj.GetComponent<Timeline>();
-                if (deadObjTime)
-                {
-                    deadObj.AddComponent<FixedJoint>().connectedBody = time.rigidbody.component;
-                    deadObjTime.rigidbody.AddForce(time.rigidbody.velocity);
-                    ActivateTriggers(false);    //make physical
-                }
-               
-
-            }
-            //if can't kill, just impale and wait as triggers
-            else
-            {
-                transform.SetParent(other.transform.parent);
-                time.rigidbody.isKinematic = true;
-                ActivateTriggers(true);    //make physical
+                deadObj.AddComponent<FixedJoint>().connectedBody = time.rigidbody.component;
+                deadObjTime.rigidbody.AddForce(time.rigidbody.velocity * 10f);
             }
 
-            time.rigidbody.velocity = Vector3.zero;
-            time.rigidbody.angularVelocity = Vector3.zero; 
 
-            held = true;
-            owner = gameObject;
+        }
+        //if can't kill, just impale 
+        else
+        {
+            transform.SetParent(other.transform.parent);
+            time.rigidbody.isKinematic = true;  //stick it in position
+            Owner = other.transform.root.gameObject;
         }
     }
-
-    //private void OnTriggerEnter(Collider other)
-    //{
-    //    Debug.Log(name + " had trigger entered by " + other.name);
-
-    //    SoldierAgent agent = other.GetComponentInParent<SoldierAgent>();
-    //    if (agent && agent.gameObject == owner)
-    //    {
-    //        return;
-    //    }
-
-    //    //if we are not held, we are hitting something
-    //    if (!held)
-    //    {
-    //        IgnoreCollisions(false);
-
-    //        Life life = other.GetComponentInParent<Life>();
-    //        if (life)
-    //        {
-    //            transform.SetParent(life.Kill().transform);
-    //        }
-    //        else
-    //        {
-    //            transform.SetParent(other.transform);
-    //        }
-
-    //        time.rigidbody.velocity = Vector3.zero;
-    //        time.rigidbody.isKinematic = true;
-    //        held = true;
-    //        owner = gameObject;
-    //    }
-    //    else if (agent)
-    //    {
-    //        agent.GripProjectile(this);
-    //    }
-    //}
-
-
-
-    //private void OnCollisionEnter(Collision col)
-    //{
-    //    Collider other = col.contacts[0].otherCollider;
-    //    SoldierAgent agent = other.GetComponentInParent<SoldierAgent>();
-
-    //    //if we are not held, we are hitting something
-    //    if (!held)
-    //    {
-    //        GetComponent<Rigidbody>().MovePosition(col.contacts[0].point);
-    //        IgnoreCollisions(false);
-
-    //        Life life = other.GetComponentInParent<Life>();
-    //        if (life)
-    //        {
-    //            transform.SetParent(life.Kill().transform);
-    //        }
-    //        else
-    //        {
-    //            transform.SetParent(other.transform.parent);
-    //        }
-
-    //        time.rigidbody.velocity = Vector3.zero;
-    //        time.rigidbody.angularVelocity = Vector3.zero; 
-    //        time.rigidbody.isKinematic = true;
-    //        held = true;
-    //        owner = gameObject;
-    //    }
-    //    else if (agent)
-    //    {
-    //        agent.GripProjectile(this);
-    //    }
-    //}
-
-
-
 }
