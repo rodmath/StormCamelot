@@ -174,7 +174,7 @@ public class Agent : MonoBehaviour
     }
 
 
-    public Transform LaunchProjectile()
+    public Transform LaunchProjectile(float angle)
     {
         if (projectile)
         {
@@ -182,7 +182,7 @@ public class Agent : MonoBehaviour
 
             projectile.transform.position = actionPoint.position;
             projectile.transform.forward = aimingVector;
-            projectile.transform.Rotate(-throwAngle, 0f, 0f, Space.Self);
+            projectile.transform.Rotate(-angle, 0f, 0f, Space.Self);
             projectile.Launch(throwForce, gameObject);
 
             Transform proj = projectile.transform;

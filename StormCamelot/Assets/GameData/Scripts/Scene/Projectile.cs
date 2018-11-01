@@ -9,6 +9,10 @@ using Chronos;
 [RequireComponent(typeof(Timeline))]
 public class Projectile : MonoBehaviour
 {
+    public Vector3 carriedAngle=Vector3.zero;
+    public Vector3 spinInFlight = Vector3.zero;
+
+
     private enum ProjectileState
     {
         inFlight,
@@ -29,9 +33,7 @@ public class Projectile : MonoBehaviour
 
     private Vector3 lastPosition;
     private float speed;
-    private float rot;
-    private float spin;
-    private float impaleDepth;
+
 
     private GameObject _owner;
     private GameObject Owner
@@ -76,6 +78,8 @@ public class Projectile : MonoBehaviour
         time.rigidbody.isKinematic = true;
         transform.position = holdPoint.position + gripOffset;
         transform.forward = holdPoint.forward;
+        transform.Rotate(carriedAngle, Space.Self);
+
         transform.SetParent(holdPoint);
     }
 
@@ -87,8 +91,6 @@ public class Projectile : MonoBehaviour
         Owner = pOwner;
 
         lastPosition = transform.position;
-        rot = Random.value * 360;
-        spin = Random.Range(30, 80);
 
         transform.SetParent(null);
 
@@ -105,7 +107,11 @@ public class Projectile : MonoBehaviour
     {
         if (state == ProjectileState.inFlight)
         {
-            transform.forward = Vector3.Slerp(transform.forward, time.rigidbody.velocity.normalized, time.fixedDeltaTime * 5f);
+            if (spinInFlight.magnitude == 0f)
+                transform.forward = Vector3.Slerp(transform.forward, time.rigidbody.velocity.normalized, time.fixedDeltaTime * 5f);
+            else
+                transform.Rotate(spinInFlight * time.fixedDeltaTime, Space.Self);
+
             lastPosition = transform.position;
 
             //RaycastHit hit;

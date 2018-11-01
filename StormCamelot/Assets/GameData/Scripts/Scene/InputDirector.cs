@@ -20,6 +20,7 @@ public class InputDirector : MonoBehaviour
 
     private Vector3 clickPos;
 
+    private VectorLine horizon;
 
 
     private void Start()
@@ -34,6 +35,11 @@ public class InputDirector : MonoBehaviour
             s.SetupInput(soldierNoActionRange, soldierSelectionRange, soldierSelectionRange);
         }
 
+        horizon = new VectorLine("Line: Horizon", new List<Vector2>(), 1);
+        horizon.points2.Add(new Vector2(0, Screen.height/2f));
+        horizon.points2.Add(new Vector2(Screen.width, Screen.height/2f));
+        horizon.color = Color.green;
+        horizon.Draw();
     }
 
     private void Update()
@@ -119,8 +125,23 @@ public class InputDirector : MonoBehaviour
     {
         if (inFPSmode)
         {
-            rootClock.localTimeScale = 1f;
-            Transform projectile = soldierSelected.LaunchProjectile();
+            rootClock.localTimeScale = 0.2f;
+
+            // Capture the FPS press as an X rotation to determine the flight angle
+            // viewport = 0 = -30
+            // viewport 0.5 = level
+            // viewport > 0  = 90
+
+            float angle = 0f;
+            if (clickPos.y < 0)
+                angle = (clickPos.y - 0.5f) * 60f;   //-0.5*60 = -30 to 0
+            else
+                angle = (clickPos.y - 0.5f) * 120f; //0 to 0.5*180 = 60
+
+
+            Transform projectile = soldierSelected.LaunchProjectile(angle);
+
+
             smoothCamera.target = projectile;
             soldierSelected.ClearAiming();
             fpsCam.enabled = false;
