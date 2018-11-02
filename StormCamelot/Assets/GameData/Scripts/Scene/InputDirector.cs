@@ -4,17 +4,17 @@ using System.Linq;
 using UnityEngine;
 using Chronos;
 using Vectrosity;
+using Cinemachine;
 
 public class InputDirector : MonoBehaviour
 {
     public float soldierSelectionRange = 3f;
     public float soldierNoActionRange = 1f;
+    public CinemachineFreeLook vOverheadCam;
 
-    private Camera overheadCam;
-    private Camera fpsCam;
+    private CinemachineVirtualCamera vFPSCam; 
     private List<Agent> soldiers;
     private Agent soldierSelected;
-    private SmoothCamera3D smoothCamera;
     private Clock rootClock;
     private bool inFPSmode = false;
 
@@ -25,9 +25,7 @@ public class InputDirector : MonoBehaviour
 
     private void Start()
     {
-        overheadCam = Camera.main;
         soldiers = Object.FindObjectsOfType<Agent>().ToList();
-        smoothCamera = Object.FindObjectOfType<SmoothCamera3D>();
         rootClock = Timekeeper.instance.Clock("Root");
 
         foreach (Agent s in soldiers)
@@ -79,11 +77,11 @@ public class InputDirector : MonoBehaviour
     private void SetClickPoint()
     {
         if (inFPSmode)
-            clickPos = fpsCam.ScreenToViewportPoint(Input.mousePosition);
+            clickPos = Camera.main.ScreenToViewportPoint(Input.mousePosition);
         else
         {
             Plane plane = new Plane(Vector3.up, transform.position);
-            Ray ray = overheadCam.ScreenPointToRay(Input.mousePosition);
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             float rayDist;
             if (plane.Raycast(ray, out rayDist))
             {
@@ -141,10 +139,9 @@ public class InputDirector : MonoBehaviour
             Transform projectile = soldierSelected.LaunchProjectile(angle);
 
 
-            smoothCamera.target = projectile;
+
             soldierSelected.ClearAiming();
-            fpsCam.enabled = false;
-            overheadCam.enabled = true;
+            vFPSCam.Priority = 10;
             inFPSmode = false;
 
             SelectSoldier(null);
@@ -163,8 +160,7 @@ public class InputDirector : MonoBehaviour
 
             if (dir.magnitude < soldierSelectionRange && dir.magnitude > soldierNoActionRange)
             {
-                fpsCam.enabled = true;
-                overheadCam.enabled = false;
+                vFPSCam.Priority = 200;
                 inFPSmode = true;
             }
             else
@@ -182,9 +178,9 @@ public class InputDirector : MonoBehaviour
         {
             soldierSelected = newSelectedSoldier;
             soldierSelected.ShowSelected = true;
-            fpsCam = soldierSelected.GetComponentInChildren<Camera>();
+            vFPSCam = soldierSelected.GetComponentInChildren<CinemachineVirtualCamera>();
             rootClock.localTimeScale = 0.001f;
-            smoothCamera.target = soldierSelected.transform;
+            vOverheadCam.LookAt = soldierSelected.transform;
         }
         else
             rootClock.localTimeScale = 1f;
