@@ -11,7 +11,7 @@ public class Projectile : MonoBehaviour
 {
     public Vector3 carriedAngle=Vector3.zero;
     public Vector3 spinInFlight = Vector3.zero;
-
+    public Transform transformToSpin;
 
     private enum ProjectileState
     {
@@ -107,10 +107,14 @@ public class Projectile : MonoBehaviour
     {
         if (state == ProjectileState.inFlight)
         {
+            Transform t = transform;
+            if (transformToSpin)
+                t = transformToSpin;
+
             if (spinInFlight.magnitude == 0f)
-                transform.forward = Vector3.Slerp(transform.forward, time.rigidbody.velocity.normalized, time.fixedDeltaTime * 5f);
+                t.forward = Vector3.Slerp(transform.forward, time.rigidbody.velocity.normalized, time.fixedDeltaTime * 5f);
             else
-                transform.Rotate(spinInFlight * time.fixedDeltaTime, Space.Self);
+                t.Rotate(spinInFlight * time.fixedDeltaTime, Space.Self);
 
             lastPosition = transform.position;
 

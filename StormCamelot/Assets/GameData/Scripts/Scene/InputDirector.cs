@@ -125,7 +125,6 @@ public class InputDirector : MonoBehaviour
     {
         if (inFPSmode)
         {
-            rootClock.localTimeScale = 0.2f;
 
             // Capture the FPS press as an X rotation to determine the flight angle
             // viewport = 0 = -30
@@ -149,6 +148,9 @@ public class InputDirector : MonoBehaviour
             inFPSmode = false;
 
             SelectSoldier(null);
+
+            rootClock.localTimeScale = 1f;
+
             return;
         }
 
