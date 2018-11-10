@@ -314,7 +314,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2e07976cf94ea44e0af3a2ff0084a83f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  carriedAngle: {x: 180, y: 0, z: 0}
+  carriedAngle: {x: 276.083, y: 222.253, z: -41.686}
+  spinInFlight: {x: 0, y: 0, z: 0}
+  transformToSpin: {fileID: 0}
 --- !u!114 &114763313981274770
 MonoBehaviour:
   m_ObjectHideFlags: 1

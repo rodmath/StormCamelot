@@ -9,7 +9,7 @@ using Chronos;
 [RequireComponent(typeof(Timeline))]
 public class Projectile : MonoBehaviour
 {
-    public Vector3 carriedAngle=Vector3.zero;
+    public Vector3 carriedAngle = Vector3.zero;
     public Vector3 spinInFlight = Vector3.zero;
     public Transform transformToSpin;
 
@@ -41,11 +41,13 @@ public class Projectile : MonoBehaviour
         get { return _owner; }
         set
         {
+            //note we need to deal with null values
             if (_owner)
                 IgnoreCollisionsWithOwner(false);
 
             _owner = value;
-            IgnoreCollisionsWithOwner(true);
+            if (value)
+                IgnoreCollisionsWithOwner(true);
         }
     }
 
@@ -54,6 +56,7 @@ public class Projectile : MonoBehaviour
     void Start()
     {
         time = GetComponent<Timeline>();
+        state = ProjectileState.inFlight;
     }
 
     private void IgnoreCollisionsWithOwner(bool ignore)
@@ -64,42 +67,94 @@ public class Projectile : MonoBehaviour
     }
 
 
+    public void ChronosPickUp(GameObject newOwner, Transform holdPoint, Vector3 gripOffset)
+    {
+        time.Do(false,
+                delegate () { return DoPickup(newOwner, holdPoint, gripOffset);},
+                delegate (Transform oldParent) { UndoPickup(oldParent); }
+               );
+    }
 
 
-
-    public void Pickedup(GameObject newOwner, Transform holdPoint, Vector3 gripOffset)
+    public Transform DoPickup(GameObject newOwner, Transform holdPoint, Vector3 gripOffset)
     {
         state = ProjectileState.carried;
 
         //if we are stuck to something, lets "unstick"
-        FixedJoint joint = Owner.GetComponent<FixedJoint>();
-        if (joint) Destroy(joint);
+        if (Owner)
+        {
+            FixedJoint joint = Owner.GetComponent<FixedJoint>();
+            if (joint) Destroy(joint);
+        }
 
         time.rigidbody.isKinematic = true;
         transform.position = holdPoint.position + gripOffset;
         transform.forward = holdPoint.forward;
         transform.Rotate(carriedAngle, Space.Self);
 
+        Transform oldParent = transform.parent;
         transform.SetParent(holdPoint);
+        return oldParent;
+    }
+
+    public void UndoPickup(Transform oldParent)
+    {
+        state = ProjectileState.impaled;
+
+        transform.SetParent(oldParent);
+    }
+
+    public void TimeSetParent(Transform newParent)
+    {
+        time.Do
+        (
+            true,
+            delegate ()
+            {
+                Transform oldParent = transform.parent;
+                transform.SetParent(newParent);
+                return oldParent;
+            },
+            delegate (Transform oldParent)
+            {
+                transform.SetParent(oldParent);
+            }
+        );
     }
 
 
+    public void ChronosLaunch(float force, GameObject pOwner)
+    {
+        time.Do(false,
+                delegate () { return DoLaunch(force, pOwner); },
+                delegate (Transform oldParent) { UndoLaunch(oldParent); }
+               );
+    }
 
-    public void Launch(float force, GameObject pOwner)
+
+    public Transform DoLaunch(float force, GameObject pOwner)
     {
         state = ProjectileState.inFlight;
         Owner = pOwner;
 
         lastPosition = transform.position;
 
-        transform.SetParent(null);
-
         time.rigidbody.isKinematic = false;
         time.rigidbody.velocity = transform.forward * force;
+
+        Transform oldParent = transform.parent;
+        transform.SetParent(null);
+        return oldParent;
     }
 
+    public void UndoLaunch(Transform oldParent)
+    {
+        state = ProjectileState.carried;
+        Owner = oldParent.gameObject;
 
-
+        time.rigidbody.isKinematic = true;
+        transform.SetParent(oldParent);
+    }
 
 
 
@@ -111,7 +166,7 @@ public class Projectile : MonoBehaviour
             if (transformToSpin)
                 t = transformToSpin;
 
-            if (spinInFlight.magnitude == 0f)
+            if (spinInFlight.magnitude.RoughlyEquals(0f))
                 t.forward = Vector3.Slerp(transform.forward, time.rigidbody.velocity.normalized, time.fixedDeltaTime * 5f);
             else
                 t.Rotate(spinInFlight * time.fixedDeltaTime, Space.Self);
@@ -160,7 +215,7 @@ public class Projectile : MonoBehaviour
         if (life)
         {
             GameObject deadObj = life.Kill();
-            transform.SetParent(deadObj.transform);
+            TimeSetParent(deadObj.transform);
             Owner = deadObj;
 
 
@@ -168,7 +223,7 @@ public class Projectile : MonoBehaviour
             if (deadObjTime)
             {
                 deadObj.AddComponent<FixedJoint>().connectedBody = time.rigidbody.component;
-                deadObjTime.rigidbody.AddForce(time.rigidbody.velocity * 10f);
+                //deadObjTime.rigidbody.AddForce(time.rigidbody.velocity * 10f);
             }
 
 
@@ -176,9 +231,55 @@ public class Projectile : MonoBehaviour
         //if can't kill, just impale 
         else
         {
-            transform.SetParent(other.transform.parent);
-            time.rigidbody.isKinematic = true;  //stick it in position
-            Owner = other.transform.root.gameObject;
+            time.Do(false,
+                    delegate () { return DoImpale(other.transform.root.transform); },
+                    delegate (Transform oldParent) { UndoImpale(oldParent); }
+            );
         }
     }
+
+
+    private Transform DoImpale(Transform newParent)
+    {
+        state = ProjectileState.impaled;
+
+        time.rigidbody.isKinematic = true;
+        Owner = newParent.root.gameObject;
+
+        Transform oldParent = transform.parent;
+        transform.SetParent(newParent.transform);
+
+        return oldParent;
+    }
+
+    private void UndoImpale(Transform oldParent)
+    {
+        state = ProjectileState.inFlight;
+
+        time.rigidbody.isKinematic = false;
+        Owner = null;
+        if (oldParent)
+            Owner = oldParent.root.gameObject;
+
+        transform.SetParent(oldParent);
+    }
+
+
+
+    private Transform DoKill(Life life)
+    {
+        GameObject deadObj = life.Kill();
+        Transform oldParent = transform.parent;
+        transform.SetParent(deadObj.transform);
+        Owner = deadObj;
+
+        Timeline deadObjTime = deadObj.GetComponent<Timeline>();
+        if (deadObjTime)
+        {
+            deadObj.AddComponent<FixedJoint>().connectedBody = time.rigidbody.component;
+        }
+
+        return oldParent;
+    }
+
 }

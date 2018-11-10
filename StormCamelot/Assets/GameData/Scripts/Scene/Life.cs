@@ -9,6 +9,24 @@ public class Life : MonoBehaviour {
 
     public GameObject Kill()
     {
+        Agent agent = GetComponent<Agent>();
+        if (agent)
+            agent.enabled = false;
+
+        GameObject deadObject = Instantiate(prefabOfDeadObject, transform.position, transform.rotation);
+
+        //now kill this one
+        gameObject.SetActive(false);
+
+        return deadObject;
+    }
+
+    public GameObject Ressurect()
+    {
+        Agent agent = GetComponent<Agent>();
+        if (agent)
+            agent.enabled = false;
+
         GameObject deadObject = Instantiate(prefabOfDeadObject, transform.position, transform.rotation);
 
         //now kill this one

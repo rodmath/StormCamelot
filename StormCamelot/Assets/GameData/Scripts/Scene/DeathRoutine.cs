@@ -1,20 +1,23 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using DG.Tweening;
+using Chronos;
 
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(Time))]
 public class DeathRoutine : MonoBehaviour {
+
+    public float force = 5f;
 
 	void Start () {
 
-        Rigidbody rb = GetComponent<Rigidbody>();
-        rb.WakeUp();
-        rb.isKinematic = false;
+        Timeline time = GetComponent<Timeline>();
+        //time.rigidbody.WakeUp();
+        time.rigidbody.isKinematic = false;
 
-        Vector3 deathForce = Random.onUnitSphere;
+        Vector3 deathForce = Random.onUnitSphere * force;
         deathForce.y = 0f;
-        rb.AddForce(deathForce * 5f);
+        time.rigidbody.AddForce(deathForce * force);
 	}
 
 }

@@ -5,12 +5,17 @@ using UnityEngine;
 using Chronos;
 using Vectrosity;
 using Cinemachine;
+using UnityEngine.UI;
 
 public class InputDirector : MonoBehaviour
 {
+    [Header("Camera setup")]
+    public CinemachineFreeLook vOverheadCam;
+    public CinemachineClearShot vClearShotCam;
+
+    [Header("Settings")]
     public float soldierSelectionRange = 3f;
     public float soldierNoActionRange = 1f;
-    public CinemachineFreeLook vOverheadCam;
 
     private CinemachineVirtualCamera vFPSCam; 
     private List<Agent> soldiers;
@@ -19,19 +24,31 @@ public class InputDirector : MonoBehaviour
     private bool inFPSmode = false;
 
     private Vector3 clickPos;
-
     private VectorLine horizon;
 
 
+    private Button button;
+
     private void Start()
     {
+        button = Object.FindObjectOfType<Button>();
         soldiers = Object.FindObjectsOfType<Agent>().ToList();
         rootClock = Timekeeper.instance.Clock("Root");
 
         foreach (Agent s in soldiers)
         {
             s.SetupInput(soldierNoActionRange, soldierSelectionRange, soldierSelectionRange);
+
+            GameObject go = new GameObject();
+            CinemachineVirtualCamera vCam = go.AddComponent<CinemachineVirtualCamera>();
+            vCam.transform.parent = vClearShotCam.transform;
+            vCam.transform.position = s.head.position;
+            vCam.Follow = s.head;
         }
+
+
+
+
 
         horizon = new VectorLine("Line: Horizon", new List<Vector2>(), 1);
         horizon.points2.Add(new Vector2(0, Screen.height/2f));
@@ -72,6 +89,8 @@ public class InputDirector : MonoBehaviour
             else if (Input.GetKeyDown("4"))
                 SelectSoldier(soldiers[3]);
         }
+
+
     }
 
     private void SetClickPoint()
@@ -123,32 +142,36 @@ public class InputDirector : MonoBehaviour
     {
         if (inFPSmode)
         {
+            if (soldierSelected.projectile)
+            {
+                // Capture the FPS press as an X rotation to determine the flight angle
+                // viewport = 0 = -30
+                // viewport 0.5 = level
+                // viewport > 0  = 90
 
-            // Capture the FPS press as an X rotation to determine the flight angle
-            // viewport = 0 = -30
-            // viewport 0.5 = level
-            // viewport > 0  = 90
+                float angle = 0f;
+                if (clickPos.y < 0)
+                    angle = (clickPos.y - 0.5f) * 60f;   //-0.5*60 = -30 to 0
+                else
+                    angle = (clickPos.y - 0.5f) * 120f; //0 to 0.5*180 = 60
 
-            float angle = 0f;
-            if (clickPos.y < 0)
-                angle = (clickPos.y - 0.5f) * 60f;   //-0.5*60 = -30 to 0
+                Transform projectile = soldierSelected.LaunchProjectile(angle);
+                vClearShotCam.LookAt = projectile;
+                foreach (CinemachineVirtualCamera vCam in vClearShotCam.GetComponentsInChildren<CinemachineVirtualCamera>())
+                    vCam.LookAt = projectile;
+
+                rootClock.localTimeScale = 1f;
+
+                soldierSelected.ClearAiming();  //must be after launch projectile
+                SelectSoldier(null);
+            }
             else
-                angle = (clickPos.y - 0.5f) * 120f; //0 to 0.5*180 = 60
+            {
+                vClearShotCam.Priority = 11;
+                vFPSCam.Priority = 10;
+                inFPSmode = false;
+            }
 
-
-            Transform projectile = soldierSelected.LaunchProjectile(angle);
-
-
-
-            soldierSelected.ClearAiming();
-            vFPSCam.Priority = 10;
-            inFPSmode = false;
-
-            SelectSoldier(null);
-
-            rootClock.localTimeScale = 1f;
-
-            return;
         }
 
 
@@ -160,7 +183,7 @@ public class InputDirector : MonoBehaviour
 
             if (dir.magnitude < soldierSelectionRange && dir.magnitude > soldierNoActionRange)
             {
-                vFPSCam.Priority = 200;
+                vFPSCam.Priority = 11;
                 inFPSmode = true;
             }
             else
@@ -172,7 +195,10 @@ public class InputDirector : MonoBehaviour
     private void SelectSoldier(Agent newSelectedSoldier)
     {
         if (soldierSelected)
+        {
+            vFPSCam.Priority = 10;
             soldierSelected.ShowSelected = false;
+        }
 
         if (newSelectedSoldier)
         {
@@ -181,6 +207,9 @@ public class InputDirector : MonoBehaviour
             vFPSCam = soldierSelected.GetComponentInChildren<CinemachineVirtualCamera>();
             rootClock.localTimeScale = 0.001f;
             vOverheadCam.LookAt = soldierSelected.transform;
+            vOverheadCam.Priority = 11;
+            vClearShotCam.Priority = 10;   
+            inFPSmode = false;
         }
         else
             rootClock.localTimeScale = 1f;

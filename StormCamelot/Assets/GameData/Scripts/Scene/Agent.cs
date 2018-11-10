@@ -64,7 +64,6 @@ public class Agent : MonoBehaviour
         aimingVector = Vector3.zero;
         actionRadius.enabled = false;
         actionRadiusBaseColour = actionRadius.color;
-        //if (projectile) GripProjectile(projectile);
     }
 
     public void SetupInput(float min, float max, float move)
@@ -164,12 +163,15 @@ public class Agent : MonoBehaviour
     {
         if (!projectile)
         {
+
+
+            Color c = new Color(1f, 0f, 0f, actionRadiusBaseColour.a);
+            time.Do(false, delegate () { return DoColourChange(c); }, delegate (Color oldColour) { UndoColourChange(oldColour); });
+            time.Do(false, delegate () { return DoProjectileChange(proj); }, delegate (Projectile oldProj) { UndoProjectileChange(oldProj); });
+
+
             Vector3 gripOffset = (actionPoint.right * 0.75f) + (actionPoint.up * 0.25f);
-
-            projectile = proj;
-            projectile.Pickedup(gameObject, actionPoint.transform, gripOffset);
-
-            actionRadius.color = new Color(1f, 0f, 0f, actionRadiusBaseColour.a);
+            projectile.ChronosPickUp(gameObject, actionPoint.transform, gripOffset);
         }
     }
 
@@ -178,16 +180,15 @@ public class Agent : MonoBehaviour
     {
         if (projectile)
         {
-            actionRadius.color = actionRadiusBaseColour; 
-
             projectile.transform.position = actionPoint.position;
             projectile.transform.forward = aimingVector;
             projectile.transform.Rotate(-angle, 0f, 0f, Space.Self);
-            projectile.Launch(throwForce, gameObject);
+            projectile.ChronosLaunch(throwForce, gameObject);
 
             Transform proj = projectile.transform;
-            projectile = null;
 
+            time.Do(false, delegate () { return DoProjectileChange(null); }, delegate (Projectile oldProj) { UndoProjectileChange(oldProj); });
+            time.Do(false, delegate () { return DoColourChange(actionRadiusBaseColour); }, delegate (Color oldColour) { UndoColourChange(oldColour); });
 
             return proj;
         }
@@ -195,19 +196,43 @@ public class Agent : MonoBehaviour
             return null;
     }
 
+    private Color DoColourChange(Color color)
+    {
+        Color oldColour = actionRadius.color;
+        actionRadius.color = color;
+        return oldColour;
+    }
 
+    private void UndoColourChange(Color c)
+    {
+        actionRadius.color = c;
+    }
 
+    private Projectile DoProjectileChange(Projectile proj)
+    {
+        Projectile oldProj = projectile;
+        projectile = proj;
+        return oldProj;
+    }
+
+    private void UndoProjectileChange(Projectile oldProj)
+    {
+        projectile = oldProj;
+    }
 
     void Update()
     {
-        //aiming our head and body
-        //if (aimingVector.magnitude > 0)
-        //{
-        //    head.forward = Vector3.Slerp(head.forward, aimingVector, 0.2f);
-        //}
+        if (time.clock.localTimeScale < 0f)
+            return;
 
-        //if we have some speed we move
-        speed = (speed + (speedChange * time.deltaTime)).Clamp(0f, maxSpeed);
+            //aiming our head and body
+            //if (aimingVector.magnitude > 0)
+            //{
+            //    head.forward = Vector3.Slerp(head.forward, aimingVector, 0.2f);
+            //}
+
+            //if we have some speed we move
+            speed = (speed + (speedChange * time.deltaTime)).Clamp(0f, maxSpeed);
 
         if (speed.Abs() > 0.1f)
         {
@@ -265,9 +290,9 @@ public class Agent : MonoBehaviour
 
 
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerStay(Collider other)
     {
-        if (!projectile)
+        if (time.timeScale>=0 && !projectile)
         {
             Projectile proj = other.GetComponentInParent<Projectile>();
             //we can only pick it up if 

@@ -5,10 +5,38 @@ using Chronos;
 
 public class TimeControl : MonoBehaviour
 {
+    Timeline[] timelines;
+    Clock clock;
+
+    private void Start()
+    {
+        timelines = FindObjectsOfType<Timeline>();
+        clock = Timekeeper.instance.Clock("Root");
+    }
+
     void Update()
     {
+        if (false && clock.localTimeScale < 0f)
+        {
+            bool stopRewind = false;
+            foreach (Timeline timeline in timelines)
+            {
+
+                if (timeline.isActiveAndEnabled)
+                    if (timeline.rewindable)
+                        if (timeline.availableRewindDuration <= clock.deltaTime)
+                            stopRewind = true;
+            }
+
+            if (stopRewind)
+            {
+                Debug.Log("Stopping rewinding");
+                clock.localTimeScale = 0f;
+            }
+        }
+
         // Get the Enemies global clock
-        Clock clock = Timekeeper.instance.Clock("Root");
+
 
         //// Change its time scale on key press
         if (Input.GetKeyDown(KeyCode.Q))
