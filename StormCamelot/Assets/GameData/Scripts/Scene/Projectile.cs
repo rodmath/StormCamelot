@@ -34,7 +34,7 @@ public class Projectile : MonoBehaviour
     private Vector3 lastPosition;
     private float speed;
 
-
+    [SerializeField]
     private GameObject _owner;
     public GameObject Owner
     {
@@ -51,6 +51,7 @@ public class Projectile : MonoBehaviour
         }
     }
 
+    private FixedJoint stickTo;
 
 
     void Start()
@@ -71,72 +72,68 @@ public class Projectile : MonoBehaviour
     {
         time.Do(false,
                 delegate () { return DoPickup(newOwner, holdPoint, gripOffset); },
-                delegate (Transform oldParent) { UndoPickup(oldParent); }
+                delegate (Rigidbody oldImpaledRb) { UndoPickup(oldImpaledRb); }
                );
     }
 
 
-    public Transform DoPickup(GameObject newOwner, Transform holdPoint, Vector3 gripOffset)
+    public Rigidbody DoPickup(GameObject newOwner, Transform holdPoint, Vector3 gripOffset)
     {
         state = ProjectileState.carried;
 
-        //if we are stuck to something, lets "unstick"
-        if (Owner)
-        {
-            FixedJoint joint = GetComponent<FixedJoint>();
-            if (joint) Destroy(joint);
-        }
-
-        time.rigidbody.isKinematic = true;
         transform.position = holdPoint.position + gripOffset;
         transform.forward = holdPoint.forward;
         transform.Rotate(carriedAngle, Space.Self);
+        Owner = newOwner;
 
-        Transform oldParent = transform.parent;
-        transform.SetParent(holdPoint);
-        return oldParent;
+        //if we are stuck to something, lets "unstick"
+        if (stickTo)
+        {
+            Rigidbody oldImpaledRb = stickTo.connectedBody;
+            stickTo.connectedBody = newOwner.GetComponent<Rigidbody>();
+            return oldImpaledRb;
+        }
+        return null;
     }
 
-    public void UndoPickup(Transform oldParent)
+    public void UndoPickup(Rigidbody oldImpaledRb)
     {
         state = ProjectileState.impaled;
 
-        transform.SetParent(oldParent);
+        stickTo.connectedBody = oldImpaledRb;
+
+        Owner = oldImpaledRb.transform.root.gameObject;
     }
 
 
 
-    public void ChronosLaunch(float force, GameObject pOwner)
+    public void ChronosLaunch(float force)
     {
         time.Do(false,
-                delegate () { return DoLaunch(force, pOwner); },
-                delegate (Transform oldParent) { UndoLaunch(oldParent); }
+                delegate () { DoLaunch(force); },
+                delegate () { UndoLaunch(); }
                );
     }
 
 
-    public Transform DoLaunch(float force, GameObject pOwner)
+    public void DoLaunch(float force)
     {
         state = ProjectileState.inFlight;
-        Owner = pOwner;
 
         lastPosition = transform.position;
 
-        time.rigidbody.isKinematic = false;
-        time.rigidbody.velocity = transform.forward * force;
+        Destroy(stickTo);
 
-        Transform oldParent = transform.parent;
-        transform.SetParent(null);
-        return oldParent;
+        time.rigidbody.velocity = transform.forward * force;
     }
 
-    public void UndoLaunch(Transform oldParent)
+    public void UndoLaunch()
     {
         state = ProjectileState.carried;
-        Owner = oldParent.gameObject;
 
-        time.rigidbody.isKinematic = true;
-        transform.SetParent(oldParent);
+        stickTo = gameObject.AddComponent<FixedJoint>();
+        stickTo.connectedBody =  Owner.GetComponent<Rigidbody>();
+
     }
 
 
@@ -156,24 +153,6 @@ public class Projectile : MonoBehaviour
 
             lastPosition = transform.position;
 
-            //RaycastHit hit;
-            //if (Physics.Linecast(lastPosition, transform.position, out hit))
-            //{
-            //    transform.position = hit.point + time.rigidbody.velocity.normalized * impaleDepth;
-            //    time.rigidbody.isKinematic = true;
-            //    transform.parent = hit.collider.transform.parent;
-            //    held = true;
-            //}
-            //else
-            //{
-            //    if (!time.rigidbody.isKinematic)
-            //    {
-            //        transform.LookAt(transform.position + time.rigidbody.velocity);
-            //        transform.Rotate(0, 0, rot);
-            //        rot += spin * time.deltaTime;
-            //    }
-            //}
-            //lastPosition = transform.position;
         }
 
     }
@@ -206,7 +185,8 @@ public class Projectile : MonoBehaviour
         }
         if (otherTime)
         {
-            otherTime.rigidbody.AddForce(transform.forward * 10f, ForceMode.Impulse);
+            //otherTime.rigidbody.AddForce(transform.forward, ForceMode.Impulse);
+            otherTime.rigidbody.AddTorque(transform.forward, ForceMode.Impulse);
         }
 
         time.Do(false,
@@ -222,12 +202,11 @@ public class Projectile : MonoBehaviour
         state = ProjectileState.impaled;
 
         //impaledObj.AddComponent<FixedJoint>().connectedBody = time.rigidbody.component;
-        Rigidbody rb = impaledObj.GetComponent<Rigidbody>();
-        if (rb)
-            gameObject.AddComponent<FixedJoint>().connectedBody = rb;
-        else
-            gameObject.AddComponent<FixedJoint>();
+        stickTo = gameObject.AddComponent<FixedJoint>();
 
+        Rigidbody rb = impaledObj.GetComponentInParent<Rigidbody>();
+        if (rb)
+            stickTo.connectedBody = rb;
 
         GameObject oldOwner = Owner;
         Owner = impaledObj.transform.root.gameObject;
@@ -240,59 +219,9 @@ public class Projectile : MonoBehaviour
         state = ProjectileState.inFlight;
 
         if (Owner)
-        {
-            FixedJoint joint = Owner.GetComponent<FixedJoint>();
-            if (joint) Destroy(joint);
-        }
+            if (stickTo) Destroy(stickTo);
 
         if (oldOwner)
             Owner = oldOwner;
     }
-
-
-
-
-    private Transform DoImpale(Transform newParent)
-    {
-        state = ProjectileState.impaled;
-
-        time.rigidbody.isKinematic = true;
-        Owner = newParent.root.gameObject;
-
-        Transform oldParent = transform.parent;
-        transform.SetParent(newParent.transform);
-
-        return oldParent;
-    }
-
-    private void UndoImpale(Transform oldParent)
-    {
-        state = ProjectileState.inFlight;
-
-        time.rigidbody.isKinematic = false;
-        Owner = null;
-        if (oldParent)
-            Owner = oldParent.root.gameObject;
-
-        transform.SetParent(oldParent);
-    }
-
-
-
-    private void DoKill(Life life)
-    {
-        life.Dead(true);
-        //Transform oldParent = transform.parent;
-        //transform.SetParent(deadObj.transform);
-        //Owner = deadObj;
-
-        //Timeline deadObjTime = deadObj.GetComponent<Timeline>();
-        //if (deadObjTime)
-        //{
-        //    deadObj.AddComponent<FixedJoint>().connectedBody = time.rigidbody.component;
-        //}
-
-        //return oldParent;
-    }
-
 }

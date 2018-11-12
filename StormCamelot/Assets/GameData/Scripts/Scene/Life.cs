@@ -26,8 +26,14 @@ public class Life : MonoBehaviour {
         {
             if (m.GetType() == typeof(Transform))
                 continue;
-            //if (m.GetType() == typeof(Timeline))
-                //continue;
+
+            if (m.GetType()== typeof(Timeline))
+            {
+                Timeline t = (Timeline)m;
+                t.rigidbody.isKinematic = !isDead;
+                t.rigidbody.useGravity = isDead;
+                continue;
+            }
 
             m.enabled = !isDead;
         }

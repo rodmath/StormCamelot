@@ -60,6 +60,7 @@ public class Agent : MonoBehaviour
     {
         cc = GetComponent<CharacterController>();
         time = GetComponent<Timeline>();
+
         SetupLines();
         aimingVector = Vector3.zero;
         actionRadius.enabled = false;
@@ -183,7 +184,7 @@ public class Agent : MonoBehaviour
             projectile.transform.position = actionPoint.position;
             projectile.transform.forward = aimingVector;
             projectile.transform.Rotate(-angle, 0f, 0f, Space.Self);
-            projectile.ChronosLaunch(throwForce, gameObject);
+            projectile.ChronosLaunch(throwForce);
 
             Transform proj = projectile.transform;
 
