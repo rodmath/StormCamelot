@@ -292,11 +292,11 @@ public class Agent : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        if (time.timeScale>=0 && !projectile)
+        if (enabled && time.timeScale>=0 && !projectile)
         {
             Projectile proj = other.GetComponentInParent<Projectile>();
             //we can only pick it up if 
-            if (proj && proj.CanBePickedUp)
+            if (proj && proj.CanBePickedUp && proj.Owner != gameObject)
                 GripProjectile(proj);
         }
     }

@@ -7,31 +7,31 @@ public class Life : MonoBehaviour {
 
     public GameObject prefabOfDeadObject;
 
-    public GameObject Kill()
+    private GameObject deadObject;
+
+    private void Start()
     {
-        Agent agent = GetComponent<Agent>();
-        if (agent)
-            agent.enabled = false;
 
-        GameObject deadObject = Instantiate(prefabOfDeadObject, transform.position, transform.rotation);
-
-        //now kill this one
-        gameObject.SetActive(false);
-
-        return deadObject;
     }
 
-    public GameObject Ressurect()
+    public void Dead(bool isDead)
     {
-        Agent agent = GetComponent<Agent>();
-        if (agent)
-            agent.enabled = false;
+        if (isDead)
+            Debug.Log(name + " was killed");
+        else
+            Debug.Log(name + " was resurrected");
 
-        GameObject deadObject = Instantiate(prefabOfDeadObject, transform.position, transform.rotation);
 
-        //now kill this one
-        gameObject.SetActive(false);
+        foreach (MonoBehaviour m in GetComponents<MonoBehaviour>())
+        {
+            if (m.GetType() == typeof(Transform))
+                continue;
+            //if (m.GetType() == typeof(Timeline))
+                //continue;
 
-        return deadObject;
+            m.enabled = !isDead;
+        }
     }
+
+
 }

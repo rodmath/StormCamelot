@@ -36,7 +36,7 @@ public class Projectile : MonoBehaviour
 
 
     private GameObject _owner;
-    private GameObject Owner
+    public GameObject Owner
     {
         get { return _owner; }
         set
@@ -70,7 +70,7 @@ public class Projectile : MonoBehaviour
     public void ChronosPickUp(GameObject newOwner, Transform holdPoint, Vector3 gripOffset)
     {
         time.Do(false,
-                delegate () { return DoPickup(newOwner, holdPoint, gripOffset);},
+                delegate () { return DoPickup(newOwner, holdPoint, gripOffset); },
                 delegate (Transform oldParent) { UndoPickup(oldParent); }
                );
     }
@@ -83,7 +83,7 @@ public class Projectile : MonoBehaviour
         //if we are stuck to something, lets "unstick"
         if (Owner)
         {
-            FixedJoint joint = Owner.GetComponent<FixedJoint>();
+            FixedJoint joint = GetComponent<FixedJoint>();
             if (joint) Destroy(joint);
         }
 
@@ -104,23 +104,6 @@ public class Projectile : MonoBehaviour
         transform.SetParent(oldParent);
     }
 
-    public void TimeSetParent(Transform newParent)
-    {
-        time.Do
-        (
-            true,
-            delegate ()
-            {
-                Transform oldParent = transform.parent;
-                transform.SetParent(newParent);
-                return oldParent;
-            },
-            delegate (Transform oldParent)
-            {
-                transform.SetParent(oldParent);
-            }
-        );
-    }
 
 
     public void ChronosLaunch(float force, GameObject pOwner)
@@ -212,31 +195,61 @@ public class Projectile : MonoBehaviour
         //Find out what we hit and fix to it or it's dead version
         Collider other = col.contacts[0].otherCollider;
         Life life = other.GetComponentInParent<Life>();
+        Timeline otherTime = other.GetComponentInParent<Timeline>();
+
         if (life)
         {
-            GameObject deadObj = life.Kill();
-            TimeSetParent(deadObj.transform);
-            Owner = deadObj;
-
-
-            Timeline deadObjTime = deadObj.GetComponent<Timeline>();
-            if (deadObjTime)
-            {
-                deadObj.AddComponent<FixedJoint>().connectedBody = time.rigidbody.component;
-                //deadObjTime.rigidbody.AddForce(time.rigidbody.velocity * 10f);
-            }
-
-
-        }
-        //if can't kill, just impale 
-        else
-        {
             time.Do(false,
-                    delegate () { return DoImpale(other.transform.root.transform); },
-                    delegate (Transform oldParent) { UndoImpale(oldParent); }
+                    delegate () { life.Dead(true); },
+                    delegate () { life.Dead(false); }
             );
         }
+        if (otherTime)
+        {
+            otherTime.rigidbody.AddForce(transform.forward * 10f, ForceMode.Impulse);
+        }
+
+        time.Do(false,
+                delegate () { return DoImpale2(other.gameObject); },
+                delegate (GameObject oldOwner) { UndoImpale2(oldOwner); }
+        );
+
+
     }
+
+    private GameObject DoImpale2(GameObject impaledObj)
+    {
+        state = ProjectileState.impaled;
+
+        //impaledObj.AddComponent<FixedJoint>().connectedBody = time.rigidbody.component;
+        Rigidbody rb = impaledObj.GetComponent<Rigidbody>();
+        if (rb)
+            gameObject.AddComponent<FixedJoint>().connectedBody = rb;
+        else
+            gameObject.AddComponent<FixedJoint>();
+
+
+        GameObject oldOwner = Owner;
+        Owner = impaledObj.transform.root.gameObject;
+
+        return oldOwner;
+    }
+
+    private void UndoImpale2(GameObject oldOwner)
+    {
+        state = ProjectileState.inFlight;
+
+        if (Owner)
+        {
+            FixedJoint joint = Owner.GetComponent<FixedJoint>();
+            if (joint) Destroy(joint);
+        }
+
+        if (oldOwner)
+            Owner = oldOwner;
+    }
+
+
 
 
     private Transform DoImpale(Transform newParent)
@@ -266,20 +279,20 @@ public class Projectile : MonoBehaviour
 
 
 
-    private Transform DoKill(Life life)
+    private void DoKill(Life life)
     {
-        GameObject deadObj = life.Kill();
-        Transform oldParent = transform.parent;
-        transform.SetParent(deadObj.transform);
-        Owner = deadObj;
+        life.Dead(true);
+        //Transform oldParent = transform.parent;
+        //transform.SetParent(deadObj.transform);
+        //Owner = deadObj;
 
-        Timeline deadObjTime = deadObj.GetComponent<Timeline>();
-        if (deadObjTime)
-        {
-            deadObj.AddComponent<FixedJoint>().connectedBody = time.rigidbody.component;
-        }
+        //Timeline deadObjTime = deadObj.GetComponent<Timeline>();
+        //if (deadObjTime)
+        //{
+        //    deadObj.AddComponent<FixedJoint>().connectedBody = time.rigidbody.component;
+        //}
 
-        return oldParent;
+        //return oldParent;
     }
 
 }

@@ -215,11 +215,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6090da511f8374135a15dd8655adcd44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _recordingInterval: 0.5
+  _recordingInterval: 0.1
   _mode: 1
   _globalClockKey: Root
   _rewindable: 1
-  _recordingDuration: 30
+  _recordingDuration: 10
 --- !u!114 &114814625112616072
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -231,6 +231,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f8788571f6744a6780c26cf01047060, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  force: 5
 --- !u!136 &136099195284893772
 CapsuleCollider:
   m_ObjectHideFlags: 1
