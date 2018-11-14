@@ -186,7 +186,7 @@ public class Projectile : MonoBehaviour
         if (otherTime)
         {
             //otherTime.rigidbody.AddForce(transform.forward, ForceMode.Impulse);
-            otherTime.rigidbody.AddTorque(transform.forward, ForceMode.Impulse);
+            //otherTime.rigidbody.AddForceAtPosition(transform.forward, col.contacts[0].point, ForceMode.Impulse);
         }
 
         time.Do(false,
