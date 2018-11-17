@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Vectrosity;
-using Chronos;
 
 [RequireComponent(typeof(CharacterController))]
-[RequireComponent(typeof(Timeline))]
 public class Agent : MonoBehaviour
 {
     [Header("Inspector setup variables")]
@@ -50,16 +48,16 @@ public class Agent : MonoBehaviour
 
 
 
-    private CharacterController cc;
-    private Timeline time;
+    private Rigidbody agentBody;
+    private Life life;
     private Color actionRadiusBaseColour;
 
     public bool ShowSelected { set { actionRadius.enabled = value; } }
 
     void Start()
     {
-        cc = GetComponent<CharacterController>();
-        time = GetComponent<Timeline>();
+        agentBody = GetComponent<Rigidbody>();
+        life = GetComponent<Life>();
 
         SetupLines();
         aimingVector = Vector3.zero;
@@ -164,15 +162,12 @@ public class Agent : MonoBehaviour
     {
         if (!projectile)
         {
-
-
             Color c = new Color(1f, 0f, 0f, actionRadiusBaseColour.a);
-            time.Do(false, delegate () { return DoColourChange(c); }, delegate (Color oldColour) { UndoColourChange(oldColour); });
-            time.Do(false, delegate () { return DoProjectileChange(proj); }, delegate (Projectile oldProj) { UndoProjectileChange(oldProj); });
-
+            actionRadius.color = c;
+            projectile = proj;
 
             Vector3 gripOffset = (actionPoint.right * 0.75f) + (actionPoint.up * 0.25f);
-            projectile.ChronosPickUp(gameObject, actionPoint.transform, gripOffset);
+            projectile.PickUp(gameObject, actionPoint.transform, gripOffset);
         }
     }
 
@@ -184,12 +179,11 @@ public class Agent : MonoBehaviour
             projectile.transform.position = actionPoint.position;
             projectile.transform.forward = aimingVector;
             projectile.transform.Rotate(-angle, 0f, 0f, Space.Self);
-            projectile.ChronosLaunch(throwForce);
+            projectile.Launch(throwForce);
 
             Transform proj = projectile.transform;
-
-            time.Do(false, delegate () { return DoProjectileChange(null); }, delegate (Projectile oldProj) { UndoProjectileChange(oldProj); });
-            time.Do(false, delegate () { return DoColourChange(actionRadiusBaseColour); }, delegate (Color oldColour) { UndoColourChange(oldColour); });
+            projectile = null;
+            actionRadius.color = actionRadiusBaseColour;
 
             return proj;
         }
@@ -197,47 +191,21 @@ public class Agent : MonoBehaviour
             return null;
     }
 
-    private Color DoColourChange(Color color)
-    {
-        Color oldColour = actionRadius.color;
-        actionRadius.color = color;
-        return oldColour;
-    }
 
-    private void UndoColourChange(Color c)
+    void FixedUpdate()
     {
-        actionRadius.color = c;
-    }
-
-    private Projectile DoProjectileChange(Projectile proj)
-    {
-        Projectile oldProj = projectile;
-        projectile = proj;
-        return oldProj;
-    }
-
-    private void UndoProjectileChange(Projectile oldProj)
-    {
-        projectile = oldProj;
-    }
-
-    void Update()
-    {
-        if (time.clock.localTimeScale < 0f)
-            return;
-
             //aiming our head and body
             //if (aimingVector.magnitude > 0)
             //{
             //    head.forward = Vector3.Slerp(head.forward, aimingVector, 0.2f);
             //}
 
-            //if we have some speed we move
-            speed = (speed + (speedChange * time.deltaTime)).Clamp(0f, maxSpeed);
+        //if we have some speed we move
+        speed = (speed + (speedChange * Time.deltaTime)).Clamp(0f, maxSpeed);
 
         if (speed.Abs() > 0.1f)
         {
-            cc.Move(transform.forward * time.deltaTime * speed);
+            agentBody.MovePosition(transform.position + (transform.forward * Time.deltaTime * speed));
             pickupCollider.enabled = false;
         }
         else
@@ -267,9 +235,9 @@ public class Agent : MonoBehaviour
         aimLine.points3[0] = actionPoint.position;
         aimLine.points3[1] = actionPoint.position + (aimingVector * aimLengthFactor * 4f);
 
-        aimMinLine.MakeCircle(transform.position, transform.up, aimMin);
-        aimMaxLine.MakeCircle(transform.position, transform.up, aimMax);
-        moveTriggerLine.MakeCircle(transform.position, transform.up, moveTriggerRange);
+        aimMinLine.MakeCircle(transform.position, Vector3.up, aimMin);
+        aimMaxLine.MakeCircle(transform.position, Vector3.up, aimMax);
+        moveTriggerLine.MakeCircle(transform.position, Vector3.up, moveTriggerRange);
 
 
         ////debug lines around aiming
@@ -293,7 +261,7 @@ public class Agent : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        if (enabled && time.timeScale>=0 && !projectile)
+        if (enabled && Time.timeScale>=0 && !projectile)
         {
             Projectile proj = other.GetComponentInParent<Projectile>();
             //we can only pick it up if 
@@ -302,33 +270,5 @@ public class Agent : MonoBehaviour
         }
     }
 
-    //private void OnTriggerEnter(Collider other)
-    //{
-    //    //drop out if we're not picking up
-    //    if (!pickupCollider.enabled)
-    //        return;
-
-    //    Projectile proj = other.GetComponentInParent<Projectile>();
-    //    if (proj)
-    //    {
-    //        if (proj.held)
-    //        {
-    //            if (projectile)
-    //                Debug.Log("On Projectile, but can't pick up as is already holding one");
-    //            else
-    //                GripProjectile(proj);
-    //        }
-    //    }
-    //}
-
-    //        else
-    //    {
-    //        SoldierAgent soldierAgent = hitCol.GetComponentInParent<SoldierAgent>();
-
-    //        if (soldierAgent && soldierAgent.projectile==null && owner==null)
-    //        {
-
-    //            soldierAgent.GripProjectile(this);
-    //}
 
 }

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using Chronos;
 using Vectrosity;
 using Cinemachine;
 using UnityEngine.UI;
@@ -20,7 +19,6 @@ public class InputDirector : MonoBehaviour
     private CinemachineVirtualCamera vFPSCam; 
     private List<Agent> soldiers;
     private Agent soldierSelected;
-    private Clock rootClock;
     private bool inFPSmode = false;
 
     private Vector3 clickPos;
@@ -33,7 +31,6 @@ public class InputDirector : MonoBehaviour
     {
         button = Object.FindObjectOfType<Button>();
         soldiers = Object.FindObjectsOfType<Agent>().ToList();
-        rootClock = Timekeeper.instance.Clock("Root");
 
         foreach (Agent s in soldiers)
         {
@@ -45,10 +42,6 @@ public class InputDirector : MonoBehaviour
             vCam.transform.position = s.head.position;
             vCam.Follow = s.head;
         }
-
-
-
-
 
         horizon = new VectorLine("Line: Horizon", new List<Vector2>(), 1);
         horizon.points2.Add(new Vector2(0, Screen.height/2f));
@@ -160,8 +153,6 @@ public class InputDirector : MonoBehaviour
                 foreach (CinemachineVirtualCamera vCam in vClearShotCam.GetComponentsInChildren<CinemachineVirtualCamera>())
                     vCam.LookAt = projectile;
 
-                rootClock.localTimeScale = 1f;
-
                 soldierSelected.ClearAiming();  //must be after launch projectile
                 SelectSoldier(null);
             }
@@ -205,14 +196,11 @@ public class InputDirector : MonoBehaviour
             soldierSelected = newSelectedSoldier;
             soldierSelected.ShowSelected = true;
             vFPSCam = soldierSelected.GetComponentInChildren<CinemachineVirtualCamera>();
-            rootClock.localTimeScale = 0.001f;
             vOverheadCam.LookAt = soldierSelected.transform;
             vOverheadCam.Priority = 11;
             vClearShotCam.Priority = 10;   
             inFPSmode = false;
         }
-        else
-            rootClock.localTimeScale = 1f;
 
 
 
@@ -226,16 +214,12 @@ public class InputDirector : MonoBehaviour
         if (dir.magnitude > soldierSelectionRange)
         {
             //we're moving, start time and move
-            rootClock.localTimeScale = 1f;
             soldierSelected.ClearAiming();
             soldierSelected.MoveIn(dir);
 
         }
         else
         {
-            //we're not moving, stop time 
-            rootClock.localTimeScale = 0.001f;
-
             if (dir.magnitude > soldierNoActionRange)
                 soldierSelected.AimIn(dir);
             else

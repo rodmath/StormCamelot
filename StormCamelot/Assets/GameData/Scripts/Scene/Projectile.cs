@@ -1,12 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Chronos;
-
+using UnityEngine.Animations;
 
 
 [RequireComponent(typeof(Rigidbody))]
-[RequireComponent(typeof(Timeline))]
 public class Projectile : MonoBehaviour
 {
     public Vector3 carriedAngle = Vector3.zero;
@@ -17,22 +15,22 @@ public class Projectile : MonoBehaviour
     {
         inFlight,
         carried,
+        impaling,
         impaled,
+        deflected,
+        atRest
     }
 
     //if we are impaled into something or held by someone the following is true
     private ProjectileState state = ProjectileState.inFlight;
     public bool CanBePickedUp { get { return state == ProjectileState.impaled; } }
 
-    //public bool Impaled { get { return state == ProjectileState.impaled; } }
-    //public bool Held { get { return state == ProjectileState.held; } }
-
-
-
-    private Timeline time;
-
+    private Rigidbody projectileBody;
     private Vector3 lastPosition;
+    private Vector3 lastVel;
+    private Vector3 lastAngVel;
     private float speed;
+    private float restTimer = 0.5f;
 
     [SerializeField]
     private GameObject _owner;
@@ -52,32 +50,40 @@ public class Projectile : MonoBehaviour
     }
 
     private FixedJoint stickTo;
-
+    private TrailRenderer trail;
 
     void Start()
     {
-        time = GetComponent<Timeline>();
+        projectileBody = GetComponent<Rigidbody>();
+        projectileBody.centerOfMass = new Vector3(0f, 0f, 0.1f);
+
+        trail = GetComponentInChildren<TrailRenderer>();
         state = ProjectileState.inFlight;
+        restTimer = 0.5f;
     }
 
-    private void IgnoreCollisionsWithOwner(bool ignore)
+
+    private void IgnoreCollisions(GameObject obj, bool ignore)
     {
         foreach (Collider thisCol in GetComponentsInChildren<Collider>())
-            foreach (Collider otherCol in Owner.GetComponentsInChildren<Collider>())
+            foreach (Collider otherCol in obj.GetComponentsInChildren<Collider>())
                 Physics.IgnoreCollision(thisCol, otherCol, ignore);
     }
 
 
-    public void ChronosPickUp(GameObject newOwner, Transform holdPoint, Vector3 gripOffset)
+    private void IgnoreCollisionsWithOwner(bool ignore)
     {
-        time.Do(false,
-                delegate () { return DoPickup(newOwner, holdPoint, gripOffset); },
-                delegate (Rigidbody oldImpaledRb) { UndoPickup(oldImpaledRb); }
-               );
+        IgnoreCollisions(Owner, ignore);
     }
 
 
-    public Rigidbody DoPickup(GameObject newOwner, Transform holdPoint, Vector3 gripOffset)
+    private void SetCollidersAsTriggers(bool asTriggers)
+    {
+        foreach (Collider c in GetComponentsInChildren<Collider>())
+            c.isTrigger = asTriggers;
+    }
+
+    public void PickUp(GameObject newOwner, Transform holdPoint, Vector3 gripOffset)
     {
         state = ProjectileState.carried;
 
@@ -88,140 +94,149 @@ public class Projectile : MonoBehaviour
 
         //if we are stuck to something, lets "unstick"
         if (stickTo)
-        {
-            Rigidbody oldImpaledRb = stickTo.connectedBody;
             stickTo.connectedBody = newOwner.GetComponent<Rigidbody>();
-            return oldImpaledRb;
-        }
-        return null;
-    }
-
-    public void UndoPickup(Rigidbody oldImpaledRb)
-    {
-        state = ProjectileState.impaled;
-
-        stickTo.connectedBody = oldImpaledRb;
-
-        Owner = oldImpaledRb.transform.root.gameObject;
     }
 
 
-
-    public void ChronosLaunch(float force)
-    {
-        time.Do(false,
-                delegate () { DoLaunch(force); },
-                delegate () { UndoLaunch(); }
-               );
-    }
-
-
-    public void DoLaunch(float force)
+    public void Launch(float force)
     {
         state = ProjectileState.inFlight;
+        restTimer = 0.5f;
 
         lastPosition = transform.position;
 
         Destroy(stickTo);
 
-        time.rigidbody.velocity = transform.forward * force;
-    }
-
-    public void UndoLaunch()
-    {
-        state = ProjectileState.carried;
-
-        stickTo = gameObject.AddComponent<FixedJoint>();
-        stickTo.connectedBody =  Owner.GetComponent<Rigidbody>();
-
+        projectileBody.velocity = transform.forward * force;
+        trail.enabled = true;
     }
 
 
 
     void FixedUpdate()
     {
+
         if (state == ProjectileState.inFlight)
         {
+
             Transform t = transform;
             if (transformToSpin)
                 t = transformToSpin;
 
             if (spinInFlight.magnitude.RoughlyEquals(0f))
-                t.forward = Vector3.Slerp(transform.forward, time.rigidbody.velocity.normalized, time.fixedDeltaTime * 5f);
+                t.forward = Vector3.Slerp(transform.forward, projectileBody.velocity.normalized, Time.fixedDeltaTime * 5f);
             else
-                t.Rotate(spinInFlight * time.fixedDeltaTime, Space.Self);
-
-            lastPosition = transform.position;
+                t.Rotate(spinInFlight * Time.fixedDeltaTime, Space.Self);
 
         }
 
+        if (state == ProjectileState.deflected)
+        {
+            if (projectileBody.velocity.magnitude.RoughlyEquals(0f))
+                restTimer -= Time.fixedDeltaTime;
+
+            if (restTimer <= 0f)
+                state = ProjectileState.atRest;
+        }
+
+        lastPosition = transform.position;
+        lastVel = projectileBody.velocity;
+        lastAngVel = projectileBody.angularVelocity;
+
+
+
     }
 
-
+    /* working
     private void OnCollisionEnter(Collision col)
     {
         if (state != ProjectileState.inFlight)
             return;
 
         state = ProjectileState.impaled;
+        trail.enabled = false;
 
         //Fix in position
-        Rigidbody body = GetComponent<Rigidbody>();
-        body.MovePosition(col.contacts[0].point);
-        time.rigidbody.velocity = Vector3.zero;
-        time.rigidbody.angularVelocity = Vector3.zero;
+        //projectileBody.MovePosition(col.contacts[0].point);
+        //projectileBody.velocity = Vector3.zero;
+        //projectileBody.angularVelocity = Vector3.zero;
 
         //Find out what we hit and fix to it or it's dead version
         Collider other = col.contacts[0].otherCollider;
         Life life = other.GetComponentInParent<Life>();
-        Timeline otherTime = other.GetComponentInParent<Timeline>();
+        Rigidbody otherBody = other.GetComponentInParent<Rigidbody>();
 
+        //kill
         if (life)
+            life.Dead();
+
+        //apply hit force - do we need?
+        if (otherBody)
         {
-            time.Do(false,
-                    delegate () { life.Dead(true); },
-                    delegate () { life.Dead(false); }
-            );
+            stickTo = gameObject.AddComponent<FixedJoint>();
+            stickTo.connectedBody = otherBody;
+            otherBody.AddForceAtPosition(transform.forward * 10f, col.contacts[0].point, ForceMode.Impulse);
+
         }
-        if (otherTime)
+
+        Owner = other.transform.root.gameObject;
+    }
+*/
+
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        //Can only penetrate something if we are in flight - deflections can't, they are just normal collisions
+        if (state != ProjectileState.inFlight)
+            return;
+
+        //if it is a surface we then we become a trigger and continue on our path, triggers handling the rest
+        Substance substance = collision.collider.GetComponent<Substance>();
+        if (substance)
         {
-            //otherTime.rigidbody.AddForce(transform.forward, ForceMode.Impulse);
-            //otherTime.rigidbody.AddForceAtPosition(transform.forward, col.contacts[0].point, ForceMode.Impulse);
+            state = ProjectileState.impaled;
+
+            //projectileBody.position = lastPosition;
+            //projectileBody.velocity = lastVel;
+            //projectileBody.angularVelocity = lastAngVel;
+
+            //SetCollidersAsTriggers(true);
+            IgnoreCollisions(collision.collider.gameObject, true);
+
+            Rigidbody otherBody = collision.collider.GetComponentInParent<Rigidbody>();
+            if (otherBody)
+            {
+                stickTo = gameObject.AddComponent<FixedJoint>();
+                stickTo.connectedBody = otherBody;
+            }
         }
-
-        time.Do(false,
-                delegate () { return DoImpale2(other.gameObject); },
-                delegate (GameObject oldOwner) { UndoImpale2(oldOwner); }
-        );
-
+        else
+            state = ProjectileState.deflected;
 
     }
 
-    private GameObject DoImpale2(GameObject impaledObj)
+    /*
+    private void OnTriggerStay(Collider other)
     {
-        state = ProjectileState.impaled;
+        Substance substance = other.GetComponent<Substance>();
+        Vector3 vel = projectileBody.velocity;
 
-        //impaledObj.AddComponent<FixedJoint>().connectedBody = time.rigidbody.component;
-        stickTo = gameObject.AddComponent<FixedJoint>();
+        if (substance)
+            projectileBody.velocity *= (1 - substance.density);
 
-        Rigidbody rb = impaledObj.GetComponentInParent<Rigidbody>();
-        if (rb)
-            stickTo.connectedBody = rb;
+        Debug.Log(vel.magnitude + " reduced to " + projectileBody.velocity.magnitude);
 
-        GameObject oldOwner = Owner;
-        Owner = impaledObj.transform.root.gameObject;
-
-        return oldOwner;
+        if (projectileBody.velocity.magnitude < 0.1f)
+        {
+            state = ProjectileState.impaled;
+            Rigidbody otherBody = other.GetComponentInParent<Rigidbody>();
+            if (otherBody)
+            {
+                stickTo = gameObject.AddComponent<FixedJoint>();
+                stickTo.connectedBody = otherBody;
+            }
+        }
     }
+*/
 
-    private void UndoImpale2(GameObject oldOwner)
-    {
-        state = ProjectileState.inFlight;
-
-        if (Owner)
-            if (stickTo) Destroy(stickTo);
-
-        if (oldOwner)
-            Owner = oldOwner;
-    }
 }

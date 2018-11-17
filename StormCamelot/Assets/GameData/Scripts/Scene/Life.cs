@@ -1,42 +1,23 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Chronos;
 
 public class Life : MonoBehaviour {
 
-    public GameObject prefabOfDeadObject;
+    public bool alive = true;
 
     private GameObject deadObject;
 
-    private void Start()
+    public void Dead()
     {
+        Debug.Log(name + " was killed");
 
-    }
+        //ragdollify
+        Rigidbody body = GetComponent<Rigidbody>();
+        if (body && body.isKinematic == true)
+            body.isKinematic = false;
 
-    public void Dead(bool isDead)
-    {
-        if (isDead)
-            Debug.Log(name + " was killed");
-        else
-            Debug.Log(name + " was resurrected");
-
-
-        foreach (MonoBehaviour m in GetComponents<MonoBehaviour>())
-        {
-            if (m.GetType() == typeof(Transform))
-                continue;
-
-            if (m.GetType()== typeof(Timeline))
-            {
-                Timeline t = (Timeline)m;
-                t.rigidbody.isKinematic = !isDead;
-                t.rigidbody.useGravity = isDead;
-                continue;
-            }
-
-            m.enabled = !isDead;
-        }
+        alive = false;
     }
 
 

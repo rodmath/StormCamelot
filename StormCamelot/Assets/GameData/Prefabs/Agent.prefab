@@ -55,7 +55,6 @@ GameObject:
   - component: {fileID: 4374499156127400}
   - component: {fileID: 114107845933221174}
   - component: {fileID: 143987225442211728}
-  - component: {fileID: 114888641779778344}
   - component: {fileID: 54558334120387226}
   - component: {fileID: 114844144833428248}
   m_Layer: 0
@@ -143,6 +142,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4472078191980020}
   - component: {fileID: 212010011872179446}
+  - component: {fileID: 5040165169814656066}
   m_Layer: 0
   m_Name: ActionRadius
   m_TagString: Untagged
@@ -201,7 +201,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1276539412000426}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -8.85, y: 0, z: 9.1}
+  m_LocalPosition: {x: -10.7, y: 0, z: 10.11}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4186826831996784}
@@ -424,10 +424,10 @@ Rigidbody:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1276539412000426}
   serializedVersion: 2
-  m_Mass: 1
+  m_Mass: 80
   m_Drag: 0
   m_AngularDrag: 0.05
-  m_UseGravity: 0
+  m_UseGravity: 1
   m_IsKinematic: 1
   m_Interpolate: 0
   m_Constraints: 0
@@ -574,24 +574,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e867f541b971342fa8ecf836862e66ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefabOfDeadObject: {fileID: 1479963354011420, guid: 8066eb40d31cb4fb8a4989f1f1e4708b,
-    type: 2}
---- !u!114 &114888641779778344
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1276539412000426}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6090da511f8374135a15dd8655adcd44, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _recordingInterval: 0.1
-  _mode: 1
-  _globalClockKey: Root
-  _rewindable: 1
-  _recordingDuration: 10
+  alive: 1
 --- !u!135 &135616083315617846
 SphereCollider:
   m_ObjectHideFlags: 1
@@ -693,3 +676,26 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!895512359 &5040165169814656066
+AimConstraint:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1607678521329376}
+  m_Enabled: 1
+  m_Weight: 1
+  m_RotationAtRest: {x: 90, y: 0, z: 0}
+  m_RotationOffset: {x: 90, y: 0, z: 95.21824}
+  m_AimVector: {x: 0, y: 0, z: 1}
+  m_UpVector: {x: 0, y: 1, z: 0}
+  m_WorldUpVector: {x: 0, y: 1, z: 0}
+  m_WorldUpObject: {fileID: 0}
+  m_UpType: 0
+  m_AffectRotationX: 1
+  m_AffectRotationY: 1
+  m_AffectRotationZ: 1
+  m_IsContraintActive: 1
+  m_IsLocked: 0
+  m_Sources:
+  - sourceTransform: {fileID: 0}
+    weight: 1
