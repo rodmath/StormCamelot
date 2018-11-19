@@ -32,11 +32,11 @@ public class InputDirector : MonoBehaviour
 
         foreach (Agent s in soldiers)
             s.SetupInput(soldierNoActionRange, soldierSelectionRange, soldierSelectionRange);
-        
+
 
         horizon = new VectorLine("Line: Horizon", new List<Vector2>(), 1);
-        horizon.points2.Add(new Vector2(0, Screen.height/2f));
-        horizon.points2.Add(new Vector2(Screen.width, Screen.height/2f));
+        horizon.points2.Add(new Vector2(0, Screen.height / 2f));
+        horizon.points2.Add(new Vector2(Screen.width, Screen.height / 2f));
         horizon.color = Color.green;
         horizon.Draw();
     }
@@ -49,7 +49,7 @@ public class InputDirector : MonoBehaviour
 
             if (Input.GetMouseButtonDown(0))
                 StartClick();
-            else 
+            else
             {
                 //mouse is down, but not being moved up or down this frame
                 if (inFPSmode)
@@ -66,7 +66,7 @@ public class InputDirector : MonoBehaviour
         {
             if (Input.GetKeyDown("1"))
                 SelectSoldier(soldiers[0]);
-            else if (Input.GetKeyDown("2") && soldiers.Count>1)
+            else if (Input.GetKeyDown("2") && soldiers.Count > 1)
                 SelectSoldier(soldiers[1]);
             else if (Input.GetKeyDown("3") && soldiers.Count > 2)
                 SelectSoldier(soldiers[2]);
@@ -76,7 +76,7 @@ public class InputDirector : MonoBehaviour
             if (Input.GetKeyDown("p"))
                 ToggleFreeze();
 
-                if (Input.GetKeyDown("z"))
+            if (Input.GetKeyDown("z"))
                 SetDestinationsTo(soldiers[0].transform.position);
             else if (Input.GetKeyDown("x") && soldiers.Count > 1)
                 SetDestinationsTo(soldiers[1].transform.position);
@@ -165,7 +165,7 @@ public class InputDirector : MonoBehaviour
             }
             else
                 inFPSmode = false;
-            
+
 
             soldierSelected.vCamFPS.Priority = 10;
             return;
@@ -198,6 +198,8 @@ public class InputDirector : MonoBehaviour
 
         yield return new WaitForSeconds(0.5f);
 
+        FreezeRigidBodies(false);
+
         Transform projectile = launchingAgent.LaunchProjectile(xAngle);
 
         launchingAgent.vCamOverhead.LookAt = projectile;
@@ -205,7 +207,7 @@ public class InputDirector : MonoBehaviour
 
         //vClearShotCam.LookAt = projectile;
         //foreach (CinemachineVirtualCamera vCam in vClearShotCam.GetComponentsInChildren<CinemachineVirtualCamera>())
-            //vCam.LookAt = projectile
+        //vCam.LookAt = projectile
 
     }
 
@@ -218,6 +220,9 @@ public class InputDirector : MonoBehaviour
             soldierSelected.vCamFPS.Priority = 10;
             soldierSelected.ShowSelected = false;
             soldierSelected = null;
+
+            //unfreeze - in case no new soldier selected
+            FreezeRigidBodies(false);
         }
 
         if (newSelectedSoldier)
@@ -229,6 +234,8 @@ public class InputDirector : MonoBehaviour
             soldierSelected.vCamOverhead.Priority = 12;
             soldierSelected.vCamOverhead.LookAt = soldierSelected.transform;
             inFPSmode = false;
+
+            FreezeRigidBodies(true);
         }
 
 
@@ -243,12 +250,15 @@ public class InputDirector : MonoBehaviour
         if (dir.magnitude > soldierSelectionRange)
         {
             //we're moving, start time and move
+            FreezeRigidBodies(false); 
             soldierSelected.ClearAiming();
             soldierSelected.MoveIn(dir);
 
         }
         else
         {
+            //we're either aiming or doing nothing, either way ensure time frozen
+            FreezeRigidBodies(true);
             if (dir.magnitude > soldierNoActionRange)
                 soldierSelected.AimIn(dir);
             else
@@ -261,7 +271,7 @@ public class InputDirector : MonoBehaviour
     {
         foreach (Agent a in soldiers)
         {
-            if (a!=soldierSelected)
+            if (a != soldierSelected)
             {
                 NavMeshAgent navMeshAgent = a.GetComponent<NavMeshAgent>();
                 if (navMeshAgent)
@@ -270,6 +280,16 @@ public class InputDirector : MonoBehaviour
                 }
             }
         }
+    }
+
+
+    private void FreezeRigidBodies(bool makeFrozen)
+    {
+
+        rigidBodiesFrozen = makeFrozen;
+        foreach (RigidbodyFreeze freeze in freezers)
+            freeze.Freeze = rigidBodiesFrozen;
+
     }
 
     private void ToggleFreeze()

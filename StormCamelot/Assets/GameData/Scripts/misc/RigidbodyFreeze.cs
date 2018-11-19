@@ -26,6 +26,10 @@ public class RigidbodyFreeze : MonoBehaviour
     {
         set
         {
+            //only make a change if the setting is different to what we already have
+            if (value == frozen)
+                return;
+
             //freeze it
             if (value)
             {
