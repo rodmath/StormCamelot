@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Vectrosity;
+using Cinemachine;
 
-[RequireComponent(typeof(CharacterController))]
 public class Agent : MonoBehaviour
 {
     [Header("Inspector setup variables")]
@@ -13,6 +13,9 @@ public class Agent : MonoBehaviour
     public Transform body;
     public Transform shoulders;
     public Collider pickupCollider;
+    public CinemachineVirtualCamera vCamFPS;
+    public CinemachineVirtualCamera vCamOverhead;
+
 
     [Header("Weaponary")]
     public Projectile projectile;
@@ -42,10 +45,10 @@ public class Agent : MonoBehaviour
     private VectorLine moveTriggerLine;
     private VectorLine aimLine;
     private VectorLine moveLine, currentMoveLine;
-    private float speed;
-    private float speedChange;
+    public float speed;
+    public float speedChange;
     private Vector3 aimingVector;
-
+    public Vector3 AimingVector { get { return aimingVector; }}
 
 
     private Rigidbody agentBody;
@@ -99,7 +102,7 @@ public class Agent : MonoBehaviour
         moveLine.color = moveColour;
         moveLine.Draw3DAuto();
 
-        currentMoveLine = new VectorLine("Line: Current Move", new List<Vector3>(), aimWidth);
+        currentMoveLine = new VectorLine("Line: Current Move", new List<Vector3>(), aimWidth * 3f);
         currentMoveLine.points3.Add(transform.position + Vector3.up);
         currentMoveLine.points3.Add(transform.position + Vector3.up);
         currentMoveLine.points3.Add(transform.position + Vector3.up);
@@ -192,40 +195,37 @@ public class Agent : MonoBehaviour
     }
 
 
-    void FixedUpdate()
+    private void Update()
     {
-            //aiming our head and body
-            //if (aimingVector.magnitude > 0)
-            //{
-            //    head.forward = Vector3.Slerp(head.forward, aimingVector, 0.2f);
-            //}
+        //input updates happen in regular update
+        LinesUpdate();
 
         //if we have some speed we move
         speed = (speed + (speedChange * Time.deltaTime)).Clamp(0f, maxSpeed);
 
+        //assume slowing down for next frame
+        speedChange = -deceleration;
+    }
+
+    void FixedUpdate()
+    {
+
         if (speed.Abs() > 0.1f)
         {
-            agentBody.MovePosition(transform.position + (transform.forward * Time.deltaTime * speed));
+            agentBody.MovePosition(transform.position + (transform.forward * Time.fixedDeltaTime * speed));
             pickupCollider.enabled = false;
         }
         else
-        {
             pickupCollider.enabled = true;
-
-        }
-        LinesUpdate();
-
-        //assume slowing down for next frame
-        speedChange = -deceleration;
 
     }
 
     private void LinesUpdate()
     {
         //Update all our drawing lines
-        currentMoveLine.points3[0] = transform.position;
-        currentMoveLine.points3[1] = transform.position + (transform.forward * speed);
-        currentMoveLine.points3[2] = transform.position + (transform.forward * maxSpeed);
+        currentMoveLine.points3[0] = Vector3.up + transform.position;
+        currentMoveLine.points3[1] = Vector3.up + transform.position + (transform.forward * speed);
+        currentMoveLine.points3[2] = Vector3.up + transform.position + (transform.forward * maxSpeed);
 
         //float dot = Vector3.Dot(head.forward, transform.forward);
         //float dotNormalised = (dot + 1f) / 2f;  //should b 1 = same direction, 0 = opposite direction
@@ -261,7 +261,7 @@ public class Agent : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        if (enabled && Time.timeScale>=0 && !projectile)
+        if (enabled && Time.timeScale >= 0 && !projectile)
         {
             Projectile proj = other.GetComponentInParent<Projectile>();
             //we can only pick it up if 

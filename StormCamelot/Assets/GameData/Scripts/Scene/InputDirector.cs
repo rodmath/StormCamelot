@@ -5,18 +5,15 @@ using UnityEngine;
 using Vectrosity;
 using Cinemachine;
 using UnityEngine.UI;
+using UnityEngine.AI;
 
 public class InputDirector : MonoBehaviour
 {
-    [Header("Camera setup")]
-    public CinemachineFreeLook vOverheadCam;
-    public CinemachineClearShot vClearShotCam;
-
     [Header("Settings")]
     public float soldierSelectionRange = 3f;
     public float soldierNoActionRange = 1f;
 
-    private CinemachineVirtualCamera vFPSCam; 
+
     private List<Agent> soldiers;
     private Agent soldierSelected;
     private bool inFPSmode = false;
@@ -33,15 +30,8 @@ public class InputDirector : MonoBehaviour
         soldiers = Object.FindObjectsOfType<Agent>().ToList();
 
         foreach (Agent s in soldiers)
-        {
             s.SetupInput(soldierNoActionRange, soldierSelectionRange, soldierSelectionRange);
-
-            GameObject go = new GameObject();
-            CinemachineVirtualCamera vCam = go.AddComponent<CinemachineVirtualCamera>();
-            vCam.transform.parent = vClearShotCam.transform;
-            vCam.transform.position = s.head.position;
-            vCam.Follow = s.head;
-        }
+        
 
         horizon = new VectorLine("Line: Horizon", new List<Vector2>(), 1);
         horizon.points2.Add(new Vector2(0, Screen.height/2f));
@@ -75,12 +65,24 @@ public class InputDirector : MonoBehaviour
         {
             if (Input.GetKeyDown("1"))
                 SelectSoldier(soldiers[0]);
-            else if (Input.GetKeyDown("2"))
+            else if (Input.GetKeyDown("2") && soldiers.Count>1)
                 SelectSoldier(soldiers[1]);
-            else if (Input.GetKeyDown("3"))
+            else if (Input.GetKeyDown("3") && soldiers.Count > 2)
                 SelectSoldier(soldiers[2]);
-            else if (Input.GetKeyDown("4"))
+            else if (Input.GetKeyDown("4") && soldiers.Count > 3)
                 SelectSoldier(soldiers[3]);
+
+
+            if (Input.GetKeyDown("z"))
+                SetDestinationsTo(soldiers[0].transform.position);
+            else if (Input.GetKeyDown("x") && soldiers.Count > 1)
+                SetDestinationsTo(soldiers[1].transform.position);
+            else if (Input.GetKeyDown("c") && soldiers.Count > 2)
+                SetDestinationsTo(soldiers[2].transform.position);
+            else if (Input.GetKeyDown("v") && soldiers.Count > 3)
+                SetDestinationsTo(soldiers[3].transform.position);
+
+
         }
 
 
@@ -127,12 +129,13 @@ public class InputDirector : MonoBehaviour
         if (soldierToSelect)
             SelectSoldier(soldierToSelect);
         else
-            Debug.Log("Nothing selected");
+            SelectSoldier(soldierSelected);//re-select to revert all settings (i.e. look at it again)
     }
 
 
     private void EndClick()
     {
+        //if we're in FPS mode we are launching something
         if (inFPSmode)
         {
             if (soldierSelected.projectile)
@@ -142,31 +145,31 @@ public class InputDirector : MonoBehaviour
                 // viewport 0.5 = level
                 // viewport > 0  = 90
 
-                float angle = 0f;
+                float xAngle = 0f;
                 if (clickPos.y < 0)
-                    angle = (clickPos.y - 0.5f) * 60f;   //-0.5*60 = -30 to 0
+                    xAngle = (clickPos.y - 0.5f) * 60f;   //-0.5*60 = -30 to 0
                 else
-                    angle = (clickPos.y - 0.5f) * 120f; //0 to 0.5*180 = 60
+                    xAngle = (clickPos.y - 0.5f) * 120f; //0 to 0.5*180 = 60
 
-                Transform projectile = soldierSelected.LaunchProjectile(angle);
-                vClearShotCam.LookAt = projectile;
-                foreach (CinemachineVirtualCamera vCam in vClearShotCam.GetComponentsInChildren<CinemachineVirtualCamera>())
-                    vCam.LookAt = projectile;
+                float yAngle = 0f;
+                if (clickPos.x < 0)
+                    yAngle = (clickPos.x - 0.5f) * 60f;   //-0.5*60 = -30 to 0
+                else
+                    yAngle = (clickPos.x - 0.5f) * 120f; //0 to 0.5*180 = 60
 
-                soldierSelected.ClearAiming();  //must be after launch projectile
-                SelectSoldier(null);
+
+                StartCoroutine(MoveCameraThenLaunch(soldierSelected, xAngle, yAngle));
             }
             else
-            {
-                vClearShotCam.Priority = 11;
-                vFPSCam.Priority = 10;
                 inFPSmode = false;
-            }
+            
 
+            soldierSelected.vCamFPS.Priority = 10;
+            return;
         }
 
-
-        if (soldierSelected)
+        //if we're not in FPS mode then we're aiming, and might go into FPS mode
+        else if (soldierSelected && soldierSelected.projectile)
         {
             //note uses last frame
             Vector3 dir = soldierSelected.transform.position - clickPos;
@@ -174,7 +177,7 @@ public class InputDirector : MonoBehaviour
 
             if (dir.magnitude < soldierSelectionRange && dir.magnitude > soldierNoActionRange)
             {
-                vFPSCam.Priority = 11;
+                soldierSelected.vCamFPS.Priority = 12;
                 inFPSmode = true;
             }
             else
@@ -182,23 +185,47 @@ public class InputDirector : MonoBehaviour
         }
     }
 
+    IEnumerator MoveCameraThenLaunch(Agent launchingAgent, float xAngle, float yAngle)
+    {
+        //wait until the overhead camera has the shot, then launch
+        while (!CinemachineCore.Instance.IsLive(launchingAgent.vCamOverhead))
+        {
+            yield return new WaitForEndOfFrame();
+            Debug.Log("Waiting...");
+        }
+
+        yield return new WaitForSeconds(0.5f);
+
+        Transform projectile = launchingAgent.LaunchProjectile(xAngle);
+
+        launchingAgent.vCamOverhead.LookAt = projectile;
+        launchingAgent.ClearAiming();  //must be after launch projectile
+
+        //vClearShotCam.LookAt = projectile;
+        //foreach (CinemachineVirtualCamera vCam in vClearShotCam.GetComponentsInChildren<CinemachineVirtualCamera>())
+            //vCam.LookAt = projectile
+
+    }
+
 
     private void SelectSoldier(Agent newSelectedSoldier)
     {
         if (soldierSelected)
         {
-            vFPSCam.Priority = 10;
+            soldierSelected.vCamOverhead.Priority = 11;
+            soldierSelected.vCamFPS.Priority = 10;
             soldierSelected.ShowSelected = false;
+            soldierSelected = null;
         }
 
         if (newSelectedSoldier)
         {
             soldierSelected = newSelectedSoldier;
             soldierSelected.ShowSelected = true;
-            vFPSCam = soldierSelected.GetComponentInChildren<CinemachineVirtualCamera>();
-            vOverheadCam.LookAt = soldierSelected.transform;
-            vOverheadCam.Priority = 11;
-            vClearShotCam.Priority = 10;   
+
+
+            soldierSelected.vCamOverhead.Priority = 12;
+            soldierSelected.vCamOverhead.LookAt = soldierSelected.transform;
             inFPSmode = false;
         }
 
@@ -226,6 +253,23 @@ public class InputDirector : MonoBehaviour
                 soldierSelected.ClearAiming();
         }
     }
+
+
+    private void SetDestinationsTo(Vector3 destination)
+    {
+        foreach (Agent a in soldiers)
+        {
+            if (a!=soldierSelected)
+            {
+                NavMeshAgent navMeshAgent = a.GetComponent<NavMeshAgent>();
+                if (navMeshAgent)
+                {
+                    navMeshAgent.destination = destination;
+                }
+            }
+        }
+    }
+
 
     private void UpdateCameraPanControl()
     {

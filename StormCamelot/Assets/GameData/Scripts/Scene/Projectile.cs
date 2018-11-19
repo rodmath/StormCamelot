@@ -15,15 +15,15 @@ public class Projectile : MonoBehaviour
     {
         inFlight,
         carried,
-        impaling,
         impaled,
         deflected,
         atRest
     }
 
-    //if we are impaled into something or held by someone the following is true
+    [SerializeField]
     private ProjectileState state = ProjectileState.inFlight;
-    public bool CanBePickedUp { get { return state == ProjectileState.impaled; } }
+
+    public bool CanBePickedUp { get { return state == ProjectileState.impaled || state == ProjectileState.atRest; } }
 
     private Rigidbody projectileBody;
     private Vector3 lastPosition;
@@ -83,6 +83,7 @@ public class Projectile : MonoBehaviour
             c.isTrigger = asTriggers;
     }
 
+
     public void PickUp(GameObject newOwner, Transform holdPoint, Vector3 gripOffset)
     {
         state = ProjectileState.carried;
@@ -92,9 +93,11 @@ public class Projectile : MonoBehaviour
         transform.Rotate(carriedAngle, Space.Self);
         Owner = newOwner;
 
-        //if we are stuck to something, lets "unstick"
-        if (stickTo)
-            stickTo.connectedBody = newOwner.GetComponent<Rigidbody>();
+        //stick ourselves to our new owner
+        if (!stickTo)
+            stickTo = gameObject.AddComponent<FixedJoint>();
+
+        stickTo.connectedBody = newOwner.GetComponent<Rigidbody>();
     }
 
 
@@ -190,17 +193,14 @@ public class Projectile : MonoBehaviour
         if (state != ProjectileState.inFlight)
             return;
 
+        //after we've hit something, we are no longer owned by anyone/thing
+        Owner = null;
+
         //if it is a surface we then we become a trigger and continue on our path, triggers handling the rest
-        Substance substance = collision.collider.GetComponent<Substance>();
-        if (substance)
+        Impenetrable impenetrable = collision.collider.GetComponent<Impenetrable>();
+        if (!impenetrable)
         {
             state = ProjectileState.impaled;
-
-            //projectileBody.position = lastPosition;
-            //projectileBody.velocity = lastVel;
-            //projectileBody.angularVelocity = lastAngVel;
-
-            //SetCollidersAsTriggers(true);
             IgnoreCollisions(collision.collider.gameObject, true);
 
             Rigidbody otherBody = collision.collider.GetComponentInParent<Rigidbody>();
@@ -213,6 +213,7 @@ public class Projectile : MonoBehaviour
         else
             state = ProjectileState.deflected;
 
+        trail.enabled = false;
     }
 
     /*
