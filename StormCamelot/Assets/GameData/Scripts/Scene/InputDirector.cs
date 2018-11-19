@@ -18,15 +18,16 @@ public class InputDirector : MonoBehaviour
     private Agent soldierSelected;
     private bool inFPSmode = false;
 
+    private List<RigidbodyFreeze> freezers;
+    private bool rigidBodiesFrozen = false;
+
     private Vector3 clickPos;
     private VectorLine horizon;
 
 
-    private Button button;
-
     private void Start()
     {
-        button = Object.FindObjectOfType<Button>();
+        freezers = Object.FindObjectsOfType<RigidbodyFreeze>().ToList();
         soldiers = Object.FindObjectsOfType<Agent>().ToList();
 
         foreach (Agent s in soldiers)
@@ -72,8 +73,10 @@ public class InputDirector : MonoBehaviour
             else if (Input.GetKeyDown("4") && soldiers.Count > 3)
                 SelectSoldier(soldiers[3]);
 
+            if (Input.GetKeyDown("p"))
+                ToggleFreeze();
 
-            if (Input.GetKeyDown("z"))
+                if (Input.GetKeyDown("z"))
                 SetDestinationsTo(soldiers[0].transform.position);
             else if (Input.GetKeyDown("x") && soldiers.Count > 1)
                 SetDestinationsTo(soldiers[1].transform.position);
@@ -191,7 +194,6 @@ public class InputDirector : MonoBehaviour
         while (!CinemachineCore.Instance.IsLive(launchingAgent.vCamOverhead))
         {
             yield return new WaitForEndOfFrame();
-            Debug.Log("Waiting...");
         }
 
         yield return new WaitForSeconds(0.5f);
@@ -270,6 +272,13 @@ public class InputDirector : MonoBehaviour
         }
     }
 
+    private void ToggleFreeze()
+    {
+        rigidBodiesFrozen = !rigidBodiesFrozen;
+        foreach (RigidbodyFreeze freeze in freezers)
+            freeze.Freeze = rigidBodiesFrozen;
+
+    }
 
     private void UpdateCameraPanControl()
     {
