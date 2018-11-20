@@ -75,6 +75,7 @@ GameObject:
   - component: {fileID: 54558334120387226}
   - component: {fileID: 114844144833428248}
   - component: {fileID: 195015748326055174}
+  - component: {fileID: 114098826517600232}
   m_Layer: 0
   m_Name: Agent
   m_TagString: Untagged
@@ -235,7 +236,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1276539412000426}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -28.5, y: 0, z: 7}
+  m_LocalPosition: {x: -10.7, y: 0, z: 1.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4186826831996784}
@@ -345,7 +346,7 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1384085108923656}
-  m_LocalRotation: {x: 0.5257311, y: -0.000000021954929, z: 0.000000013568893, w: 0.85065085}
+  m_LocalRotation: {x: 0.5257311, y: 0.000000021954936, z: -0.0000000135688945, w: 0.85065085}
   m_LocalPosition: {x: 0, y: 20, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
@@ -506,6 +507,17 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &114098826517600232
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1276539412000426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5da8f86120e694240ba9c54db2f3c73c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &114107845933221174
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -514,7 +526,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1276539412000426}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e8945ccfb2e88470683f1e3aaa0c9c9f, type: 3}
+  m_Script: {fileID: 11500000, guid: 142483963e79e4c1c992e45e1782d99d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   actionRadius: {fileID: 212010011872179446}
@@ -744,6 +756,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   alive: 1
+  deathThrowDuration: 5
+  state: 0
 --- !u!135 &135616083315617846
 SphereCollider:
   m_ObjectHideFlags: 1

@@ -47,7 +47,7 @@ public class Life : MonoBehaviour
         if (nav)
             nav.enabled = false;
 
-        Agent agent = GetComponent<Agent>();
+        Actor agent = GetComponent<Actor>();
         if (agent)
             agent.enabled = false;
 
@@ -106,7 +106,7 @@ public class Life : MonoBehaviour
         if (nav)
             nav.enabled = true;
 
-        Agent agent = GetComponent<Agent>();
+        Actor agent = GetComponent<Actor>();
         if (agent)
             agent.enabled = true;
     }

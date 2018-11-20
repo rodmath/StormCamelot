@@ -4,7 +4,7 @@ using UnityEngine;
 using Vectrosity;
 using Cinemachine;
 
-public class Agent : MonoBehaviour
+public class Actor : MonoBehaviour
 {
     [Header("Inspector setup variables")]
     public SpriteRenderer actionRadius;

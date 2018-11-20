@@ -14,8 +14,8 @@ public class InputDirector : MonoBehaviour
     public float soldierNoActionRange = 1f;
 
 
-    private List<Agent> soldiers;
-    private Agent soldierSelected;
+    private List<Actor> soldiers;
+    private Actor soldierSelected;
     private bool inFPSmode = false;
 
     private List<RigidbodyFreeze> freezers;
@@ -28,9 +28,9 @@ public class InputDirector : MonoBehaviour
     private void Start()
     {
         freezers = Object.FindObjectsOfType<RigidbodyFreeze>().ToList();
-        soldiers = Object.FindObjectsOfType<Agent>().ToList();
+        soldiers = Object.FindObjectsOfType<Actor>().ToList();
 
-        foreach (Agent s in soldiers)
+        foreach (Actor s in soldiers)
             s.SetupInput(soldierNoActionRange, soldierSelectionRange, soldierSelectionRange);
 
 
@@ -113,10 +113,10 @@ public class InputDirector : MonoBehaviour
             return;
 
 
-        Agent soldierToSelect = null;
+        Actor soldierToSelect = null;
         float dist;
         float minDist = soldierSelectionRange;
-        foreach (Agent soldier in soldiers)
+        foreach (Actor soldier in soldiers)
         {
             dist = (clickPos - soldier.transform.position).magnitude;
             if (dist < soldierSelectionRange)
@@ -188,7 +188,7 @@ public class InputDirector : MonoBehaviour
         }
     }
 
-    IEnumerator MoveCameraThenLaunch(Agent launchingAgent, float xAngle, float yAngle)
+    IEnumerator MoveCameraThenLaunch(Actor launchingAgent, float xAngle, float yAngle)
     {
         //wait until the overhead camera has the shot, then launch
         while (!CinemachineCore.Instance.IsLive(launchingAgent.vCamOverhead))
@@ -212,7 +212,7 @@ public class InputDirector : MonoBehaviour
     }
 
 
-    private void SelectSoldier(Agent newSelectedSoldier)
+    private void SelectSoldier(Actor newSelectedSoldier)
     {
         if (soldierSelected)
         {
@@ -269,7 +269,7 @@ public class InputDirector : MonoBehaviour
 
     private void SetDestinationsTo(Vector3 destination)
     {
-        foreach (Agent a in soldiers)
+        foreach (Actor a in soldiers)
         {
             if (a != soldierSelected)
             {
