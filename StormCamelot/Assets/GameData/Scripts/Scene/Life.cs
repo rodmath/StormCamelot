@@ -34,22 +34,32 @@ public class Life : MonoBehaviour
         if (!alive && state == LifeState.alive)
             StartCoroutine(TakeLastBreaths());
 
+        //manual resurrection
         if (alive && state == LifeState.dead)
-            StartCoroutine(Resurrect());
+            StartCoroutine(Resurrect(true));
+
+        //returning to wait queue
+        if (!alive && transform.position.y < -10f)
+            StartCoroutine(Resurrect(false));
     }
 
+    private void MakeComponents(bool active)
+    {
+        NavMeshAgent nav = GetComponent<NavMeshAgent>();
+        if (nav)
+            nav.enabled = active;
+
+        Actor agent = GetComponent<Actor>();
+        if (agent)
+            agent.enabled = active;
+
+    }
 
     private IEnumerator TakeLastBreaths()
     {
         state = LifeState.takingLastBreaths;
 
-        NavMeshAgent nav = GetComponent<NavMeshAgent>();
-        if (nav)
-            nav.enabled = false;
-
-        Actor agent = GetComponent<Actor>();
-        if (agent)
-            agent.enabled = false;
+        MakeComponents(false);
 
         Rigidbody body = GetComponent<Rigidbody>();
         if (body)
@@ -82,7 +92,7 @@ public class Life : MonoBehaviour
     }
 
 
-    private IEnumerator Resurrect()
+    private IEnumerator Resurrect(bool andEnable)
     {
         state = LifeState.alive;
 
@@ -102,13 +112,9 @@ public class Life : MonoBehaviour
         //wait a few frames for our position to update before re-enabling navmesh agent (otherwise it's not created)
         yield return new WaitForFixedUpdate();
 
-        NavMeshAgent nav = GetComponent<NavMeshAgent>();
-        if (nav)
-            nav.enabled = true;
+        MakeComponents(true);
 
-        Actor agent = GetComponent<Actor>();
-        if (agent)
-            agent.enabled = true;
+        gameObject.SetActive(andEnable);
     }
 
 }
