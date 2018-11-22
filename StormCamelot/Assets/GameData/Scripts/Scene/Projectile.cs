@@ -200,7 +200,10 @@ public class Projectile : MonoBehaviour
         Owner = null;
 
         Impenetrable impenetrable = collision.collider.GetComponent<Impenetrable>();
-        if (!impenetrable)
+        Damage d = collision.contacts[0].thisCollider.GetComponent<Damage>();
+
+
+        if (!impenetrable && d && d.type==DamageType.piercing)
         {
             state = ProjectileState.impaled;
             IgnoreCollisions(collision.collider.gameObject, true);
