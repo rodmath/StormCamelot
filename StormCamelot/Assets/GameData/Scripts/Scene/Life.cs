@@ -117,4 +117,15 @@ public class Life : MonoBehaviour
         gameObject.SetActive(andEnable);
     }
 
+
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.relativeVelocity.magnitude > 2)
+        {
+            if (alive)
+                alive = false;
+        }
+    }
+
 }
