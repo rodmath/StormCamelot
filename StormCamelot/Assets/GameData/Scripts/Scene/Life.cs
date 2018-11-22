@@ -77,15 +77,11 @@ public class Life : MonoBehaviour
             int twitches = Random.Range(2, 5);
             for (int i = 0; i < twitches; i++)
             {
-                body.AddForce(Random.onUnitSphere * body.mass, ForceMode.Impulse);
-                body.AddTorque(Random.onUnitSphere * body.mass, ForceMode.Impulse);
+                body.AddForce(Random.onUnitSphere * body.mass/5f, ForceMode.Impulse);
+                body.AddTorque(Random.onUnitSphere * body.mass/5f, ForceMode.Impulse);
 
                 yield return new WaitForSeconds(deathThrowDuration / (float)twitches);
             }
-
-            //fall through floor
-            foreach (Collider c in GetComponentsInChildren<Collider>())
-                c.enabled = false;
         }
 
         state = LifeState.dead;
@@ -121,8 +117,11 @@ public class Life : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.relativeVelocity.magnitude > 2)
+        //Debug.Log(gameObject.name + " was hit by " + collision.collider.gameObject.name + " with rel vel: " + collision.relativeVelocity.magnitude);
+        if (collision.relativeVelocity.magnitude > 20f)
         {
+            Debug.Log(gameObject.name + " was hit by " + collision.collider.gameObject.name + " with rel vel: " + collision.relativeVelocity.magnitude);
+
             if (alive)
                 alive = false;
         }

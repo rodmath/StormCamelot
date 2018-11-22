@@ -118,7 +118,6 @@ public class Projectile : MonoBehaviour
 
     void FixedUpdate()
     {
-
         if (state == ProjectileState.inFlight)
         {
 
@@ -142,12 +141,16 @@ public class Projectile : MonoBehaviour
                 state = ProjectileState.atRest;
         }
 
+        if (state == ProjectileState.impaled)
+        {
+            if (!stickTo.gameObject.activeSelf)
+                Destroy(stickTo);
+        }
+
+
         lastPosition = transform.position;
         lastVel = projectileBody.velocity;
         lastAngVel = projectileBody.angularVelocity;
-
-
-
     }
 
     /* working
@@ -196,7 +199,6 @@ public class Projectile : MonoBehaviour
         //after we've hit something, we are no longer owned by anyone/thing
         Owner = null;
 
-        //if it is a surface we then we become a trigger and continue on our path, triggers handling the rest
         Impenetrable impenetrable = collision.collider.GetComponent<Impenetrable>();
         if (!impenetrable)
         {
