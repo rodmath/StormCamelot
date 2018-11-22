@@ -72,6 +72,7 @@ GameObject:
   - component: {fileID: 33066982110417628}
   - component: {fileID: 23880749948553696}
   - component: {fileID: 136746600949686806}
+  - component: {fileID: 114852789750821440}
   m_Layer: 0
   m_Name: Tip
   m_TagString: Untagged
@@ -90,6 +91,7 @@ GameObject:
   - component: {fileID: 54518494517670870}
   - component: {fileID: 114083532764813550}
   - component: {fileID: 114443364246574436}
+  - component: {fileID: 114606929164284110}
   m_Layer: 0
   m_Name: Spear
   m_TagString: Untagged
@@ -103,8 +105,8 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1995074535491768}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -10.23, y: 5.54, z: 4.58}
+  m_LocalRotation: {x: 0, y: 0.38268343, z: 0, w: 0.92387956}
+  m_LocalPosition: {x: -6.2585316, y: 20, z: -0.64}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4495495039326528}
@@ -113,7 +115,7 @@ Transform:
   - {fileID: 4601590187445992}
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 45, z: 0}
 --- !u!4 &4450112336823060
 Transform:
   m_ObjectHideFlags: 1
@@ -383,6 +385,7 @@ MonoBehaviour:
   carriedAngle: {x: 0, y: 0, z: 0}
   spinInFlight: {x: 0, y: 0, z: 0}
   transformToSpin: {fileID: 0}
+  state: 0
   _owner: {fileID: 0}
 --- !u!114 &114443364246574436
 MonoBehaviour:
@@ -396,6 +399,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   highlight: {fileID: 212961117258177420}
+--- !u!114 &114606929164284110
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1995074535491768}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5da8f86120e694240ba9c54db2f3c73c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &114852789750821440
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1774512280541522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5daf25597ca3e4294829ecdc63003d32, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  type: 7
 --- !u!136 &136746600949686806
 CapsuleCollider:
   m_ObjectHideFlags: 1

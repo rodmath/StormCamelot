@@ -9,6 +9,8 @@ public class Life : MonoBehaviour
     private enum LifeState
     {
         alive,
+        stunned,
+        frozen,
         takingLastBreaths,
         dead
     }
@@ -77,8 +79,8 @@ public class Life : MonoBehaviour
             int twitches = Random.Range(2, 5);
             for (int i = 0; i < twitches; i++)
             {
-                body.AddForce(Random.onUnitSphere * body.mass/5f, ForceMode.Impulse);
-                body.AddTorque(Random.onUnitSphere * body.mass/5f, ForceMode.Impulse);
+                body.AddForce(Random.onUnitSphere * body.mass / 5f, ForceMode.Impulse);
+                body.AddTorque(Random.onUnitSphere * body.mass / 5f, ForceMode.Impulse);
 
                 yield return new WaitForSeconds(deathThrowDuration / (float)twitches);
             }
@@ -114,16 +116,72 @@ public class Life : MonoBehaviour
     }
 
 
+    private IEnumerator Stunned(float stunDuration)
+    {
+        state = LifeState.stunned;
+
+        MakeComponents(false);
+
+        Rigidbody body = GetComponent<Rigidbody>();
+        if (body)
+        {
+            //ragdollify
+            body.WakeUp();
+            cacheIsKinetic = body.isKinematic;
+            cachePosition = body.position;
+            cacheRotation = body.rotation;
+
+            if (body.isKinematic)
+                body.isKinematic = false;
+
+            //twitch
+            body.AddForce(Random.onUnitSphere * body.mass, ForceMode.Impulse);
+            body.AddTorque(Random.onUnitSphere * body.mass, ForceMode.Impulse);
+
+            yield return new WaitForSeconds(stunDuration);
+        }
+
+        yield return new WaitForSeconds(stunDuration);
+
+        MakeComponents(true);
+
+        state = LifeState.alive;
+    }
+
+
+
+
+
+
 
     private void OnCollisionEnter(Collision collision)
     {
-        //Debug.Log(gameObject.name + " was hit by " + collision.collider.gameObject.name + " with rel vel: " + collision.relativeVelocity.magnitude);
-        if (collision.relativeVelocity.magnitude > 20f)
-        {
-            Debug.Log(gameObject.name + " was hit by " + collision.collider.gameObject.name + " with rel vel: " + collision.relativeVelocity.magnitude);
+        //Debug.Log(gameObject.name + " was hit by " + collision.collider.gameObject.name + " with rel vel: " + collision.relativeVelocity.magnitude); 
 
-            if (alive)
-                alive = false;
+        Damage damage = collision.collider.GetComponent<Damage>();
+        if (!damage)
+            return;
+
+        float hitForce = collision.relativeVelocity.magnitude;
+
+        //what damage type is it, and what damage is caused
+        if (damage.type == DamageType.piercing  || damage.type == DamageType.slashing)
+        {
+            if (collision.relativeVelocity.magnitude > 20f)
+            {
+                if (alive)
+                    alive = false;
+            }
+        }
+
+
+        if (damage.type == DamageType.bludgeoning)
+        {
+            if (collision.relativeVelocity.magnitude > 20f)
+            {
+                StartCoroutine(Stunned(1f));
+            }
+
         }
     }
 
