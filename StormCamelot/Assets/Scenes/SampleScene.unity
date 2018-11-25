@@ -167,7 +167,7 @@ GameObject:
   - component: {fileID: 114498876}
   - component: {fileID: 114498877}
   m_Layer: 0
-  m_Name: Cube (3)
+  m_Name: Cube - Impenetrable
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -226,7 +226,7 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RenderingLayerMask: 4294967295
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: e7c5cff67df9347158491b4eb45f35db, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1130,7 +1130,13 @@ Prefab:
       propertyPath: m_Name
       value: Spear - pointy
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 114083532764813550, guid: d3c6e174f43084d28a8d0ef2602490f6,
+        type: 2}
+      propertyPath: canBePickedUp
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 114606929164284110, guid: d3c6e174f43084d28a8d0ef2602490f6, type: 2}
   m_SourcePrefab: {fileID: 100100000, guid: d3c6e174f43084d28a8d0ef2602490f6, type: 2}
   m_IsPrefabAsset: 0
 --- !u!1001 &727069390
@@ -1807,22 +1813,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!1 &1441215993 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1995074535491768, guid: d3c6e174f43084d28a8d0ef2602490f6,
-    type: 2}
-  m_PrefabInternal: {fileID: 1691580374}
---- !u!114 &1441215998
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1441215993}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5da8f86120e694240ba9c54db2f3c73c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1552284442 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1276539412000426, guid: 8278e3e181f9a4c10bc47ae22e705edd,
@@ -2115,6 +2105,11 @@ Prefab:
     - target: {fileID: 114852789750821440, guid: d3c6e174f43084d28a8d0ef2602490f6,
         type: 2}
       propertyPath: type
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114083532764813550, guid: d3c6e174f43084d28a8d0ef2602490f6,
+        type: 2}
+      propertyPath: canBePickedUp
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -2454,7 +2449,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 1995074535491768, guid: d3c6e174f43084d28a8d0ef2602490f6, type: 2}
       propertyPath: m_Name
-      value: Spear (2)
+      value: Spear (2) - pointy
       objectReference: {fileID: 0}
     - target: {fileID: 4210834250426012, guid: d3c6e174f43084d28a8d0ef2602490f6, type: 2}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -2463,6 +2458,11 @@ Prefab:
     - target: {fileID: 4210834250426012, guid: d3c6e174f43084d28a8d0ef2602490f6, type: 2}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 45
+      objectReference: {fileID: 0}
+    - target: {fileID: 114083532764813550, guid: d3c6e174f43084d28a8d0ef2602490f6,
+        type: 2}
+      propertyPath: canBePickedUp
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d3c6e174f43084d28a8d0ef2602490f6, type: 2}

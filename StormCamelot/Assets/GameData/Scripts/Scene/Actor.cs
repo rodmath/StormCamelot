@@ -48,7 +48,7 @@ public class Actor : MonoBehaviour
     public float speed;
     public float speedChange;
     private Vector3 aimingVector;
-    public Vector3 AimingVector { get { return aimingVector; }}
+    public Vector3 AimingVector { get { return aimingVector; } }
 
 
     private Rigidbody agentBody;
@@ -161,18 +161,6 @@ public class Actor : MonoBehaviour
     }
 
 
-    public void GripProjectile(Projectile proj)
-    {
-        if (!projectile)
-        {
-            Color c = new Color(1f, 0f, 0f, actionRadiusBaseColour.a);
-            actionRadius.color = c;
-            projectile = proj;
-
-            Vector3 gripOffset = (actionPoint.right * 0.75f) + (actionPoint.up * 0.25f);
-            projectile.PickUp(gameObject, actionPoint.transform, gripOffset);
-        }
-    }
 
 
     public Transform LaunchProjectile(float angle)
@@ -261,14 +249,31 @@ public class Actor : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        if (enabled && Time.timeScale >= 0 && !projectile)
+        //can only pick up when this is enabled and time is running
+        if (!enabled)
+            return;
+        if (Time.timeScale <= 0)
+            return;
+            
+        Projectile otherProj = other.GetComponentInParent<Projectile>();
+
+        if (otherProj && !projectile && otherProj.canBePickedUp)
         {
-            Projectile proj = other.GetComponentInParent<Projectile>();
-            //we can only pick it up if 
-            if (proj && proj.CanBePickedUp && proj.Owner != gameObject)
-                GripProjectile(proj);
+            Color c = new Color(1f, 0f, 0f, actionRadiusBaseColour.a);
+            actionRadius.color = c;
+            projectile = otherProj;
+
+            Vector3 gripOffset = (actionPoint.right * 0.75f) + (actionPoint.up * 0.25f);
+            otherProj.Grab(gameObject, actionPoint.transform, gripOffset);
         }
+            
     }
 
 
+
+
+
 }
+
+
+

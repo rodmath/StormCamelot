@@ -5,7 +5,7 @@ using UnityEngine.Animations;
 
 
 [RequireComponent(typeof(Rigidbody))]
-public class Projectile : MonoBehaviour
+public class Projectile : Item
 {
     public Vector3 carriedAngle = Vector3.zero;
     public Vector3 spinInFlight = Vector3.zero;
@@ -32,28 +32,12 @@ public class Projectile : MonoBehaviour
     private float speed;
     private float restTimer = 0.5f;
 
-    [SerializeField]
-    private GameObject _owner;
-    public GameObject Owner
-    {
-        get { return _owner; }
-        set
-        {
-            //note we need to deal with null values
-            if (_owner)
-                IgnoreCollisionsWithOwner(false);
-
-            _owner = value;
-            if (value)
-                IgnoreCollisionsWithOwner(true);
-        }
-    }
-
-    private FixedJoint stickTo;
+    private Item item;
     private TrailRenderer trail;
 
     void Start()
     {
+        item = GetComponent<Item>();
         projectileBody = GetComponent<Rigidbody>();
         projectileBody.centerOfMass = new Vector3(0f, 0f, 0.1f);
 
@@ -63,43 +47,6 @@ public class Projectile : MonoBehaviour
     }
 
 
-    private void IgnoreCollisions(GameObject obj, bool ignore)
-    {
-        foreach (Collider thisCol in GetComponentsInChildren<Collider>())
-            foreach (Collider otherCol in obj.GetComponentsInChildren<Collider>())
-                Physics.IgnoreCollision(thisCol, otherCol, ignore);
-    }
-
-
-    private void IgnoreCollisionsWithOwner(bool ignore)
-    {
-        IgnoreCollisions(Owner, ignore);
-    }
-
-
-    private void SetCollidersAsTriggers(bool asTriggers)
-    {
-        foreach (Collider c in GetComponentsInChildren<Collider>())
-            c.isTrigger = asTriggers;
-    }
-
-
-    public void PickUp(GameObject newOwner, Transform holdPoint, Vector3 gripOffset)
-    {
-        state = ProjectileState.carried;
-
-        transform.position = holdPoint.position + gripOffset;
-        transform.forward = holdPoint.forward;
-        transform.Rotate(carriedAngle, Space.Self);
-        Owner = newOwner;
-
-        //stick ourselves to our new owner
-        if (!stickTo)
-            stickTo = gameObject.AddComponent<FixedJoint>();
-
-        stickTo.connectedBody = newOwner.GetComponent<Rigidbody>();
-    }
-
 
     public void Launch(float force)
     {
@@ -108,7 +55,7 @@ public class Projectile : MonoBehaviour
 
         lastPosition = transform.position;
 
-        Destroy(stickTo);
+        item.Release();
 
         projectileBody.velocity = transform.forward * force;
         trail.enabled = true;
@@ -140,13 +87,6 @@ public class Projectile : MonoBehaviour
             if (restTimer <= 0f)
                 state = ProjectileState.atRest;
         }
-
-        if (state == ProjectileState.impaled)
-        {
-            if (!stickTo.gameObject.activeSelf)
-                Destroy(stickTo);
-        }
-
 
         lastPosition = transform.position;
         lastVel = projectileBody.velocity;
@@ -196,7 +136,7 @@ public class Projectile : MonoBehaviour
         if (state != ProjectileState.inFlight)
             return;
 
-        //after we've hit something, we are no longer owned by anyone/thing
+        //we are going to need a new owner
         Owner = null;
 
         Impenetrable impenetrable = collision.collider.GetComponent<Impenetrable>();
@@ -206,14 +146,8 @@ public class Projectile : MonoBehaviour
         if (!impenetrable && d && d.type==DamageType.piercing)
         {
             state = ProjectileState.impaled;
-            IgnoreCollisions(collision.collider.gameObject, true);
 
-            Rigidbody otherBody = collision.collider.GetComponentInParent<Rigidbody>();
-            if (otherBody)
-            {
-                stickTo = gameObject.AddComponent<FixedJoint>();
-                stickTo.connectedBody = otherBody;
-            }
+            item.Grab(collision.collider.gameObject);
         }
         else
             state = ProjectileState.deflected;
@@ -221,28 +155,5 @@ public class Projectile : MonoBehaviour
         trail.enabled = false;
     }
 
-    /*
-    private void OnTriggerStay(Collider other)
-    {
-        Substance substance = other.GetComponent<Substance>();
-        Vector3 vel = projectileBody.velocity;
-
-        if (substance)
-            projectileBody.velocity *= (1 - substance.density);
-
-        Debug.Log(vel.magnitude + " reduced to " + projectileBody.velocity.magnitude);
-
-        if (projectileBody.velocity.magnitude < 0.1f)
-        {
-            state = ProjectileState.impaled;
-            Rigidbody otherBody = other.GetComponentInParent<Rigidbody>();
-            if (otherBody)
-            {
-                stickTo = gameObject.AddComponent<FixedJoint>();
-                stickTo.connectedBody = otherBody;
-            }
-        }
-    }
-*/
 
 }
