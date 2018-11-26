@@ -197,7 +197,6 @@ public class Actor : MonoBehaviour
 
     void FixedUpdate()
     {
-
         if (speed.Abs() > 0.1f)
         {
             agentBody.MovePosition(transform.position + (transform.forward * Time.fixedDeltaTime * speed));
@@ -261,7 +260,8 @@ public class Actor : MonoBehaviour
         {
             Color c = new Color(1f, 0f, 0f, actionRadiusBaseColour.a);
             actionRadius.color = c;
-            projectile = otherProj;
+
+            StartCoroutine(PickupDelay(otherProj, 1f));
 
             Vector3 gripOffset = (actionPoint.right * 0.75f) + (actionPoint.up * 0.25f);
             otherProj.Grab(gameObject, actionPoint.transform, gripOffset);
@@ -269,6 +269,11 @@ public class Actor : MonoBehaviour
             
     }
 
+    IEnumerator PickupDelay(Projectile pickupProj, float secs)
+    {
+        yield return new WaitForSeconds(secs);
+        projectile = pickupProj;
+    }
 
 
 

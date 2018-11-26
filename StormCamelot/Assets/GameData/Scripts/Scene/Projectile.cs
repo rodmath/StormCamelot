@@ -39,7 +39,6 @@ public class Projectile : Item
     {
         item = GetComponent<Item>();
         projectileBody = GetComponent<Rigidbody>();
-        projectileBody.centerOfMass = new Vector3(0f, 0f, 0.1f);
 
         trail = GetComponentInChildren<TrailRenderer>();
         state = ProjectileState.inFlight;
@@ -133,7 +132,7 @@ public class Projectile : Item
     private void OnCollisionEnter(Collision collision)
     {
         //Can only penetrate something if we are in flight - deflections can't, they are just normal collisions
-        if (state != ProjectileState.inFlight)
+        if (!enabled || state != ProjectileState.inFlight)
             return;
 
         //we are going to need a new owner

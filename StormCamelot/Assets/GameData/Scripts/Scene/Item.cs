@@ -64,10 +64,10 @@ public class Item : MonoBehaviour
         if (!stickTo)
             stickTo = gameObject.AddComponent<FixedJoint>();
 
-        Rigidbody stickToRb = newOwner.GetComponent<Rigidbody>();
+        Rigidbody stickToRb = newOwner.GetComponentInParent<Rigidbody>();
         if (stickToRb)
             stickTo.connectedBody = stickToRb;
-
+            
     }
 
 
