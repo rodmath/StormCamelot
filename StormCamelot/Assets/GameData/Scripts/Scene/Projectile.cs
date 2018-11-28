@@ -7,6 +7,7 @@ using UnityEngine.Animations;
 [RequireComponent(typeof(Rigidbody))]
 public class Projectile : Item
 {
+    public bool hasFeathers = true;
     public Vector3 carriedAngle = Vector3.zero;
     public Vector3 spinInFlight = Vector3.zero;
     public Transform transformToSpin;
@@ -41,7 +42,6 @@ public class Projectile : Item
         projectileBody = GetComponent<Rigidbody>();
 
         trail = GetComponentInChildren<TrailRenderer>();
-        state = ProjectileState.inFlight;
         restTimer = 0.5f;
     }
 
@@ -57,7 +57,8 @@ public class Projectile : Item
         item.Release();
 
         projectileBody.velocity = transform.forward * force;
-        trail.enabled = true;
+        if (trail) 
+            trail.enabled = true;
     }
 
 
@@ -71,7 +72,7 @@ public class Projectile : Item
             if (transformToSpin)
                 t = transformToSpin;
 
-            if (spinInFlight.magnitude.RoughlyEquals(0f))
+            if (hasFeathers && spinInFlight.magnitude.RoughlyEquals(0f))
                 t.forward = Vector3.Slerp(transform.forward, projectileBody.velocity.normalized, Time.fixedDeltaTime * 5f);
             else
                 t.Rotate(spinInFlight * Time.fixedDeltaTime, Space.Self);
@@ -151,7 +152,8 @@ public class Projectile : Item
         else
             state = ProjectileState.deflected;
 
-        trail.enabled = false;
+        if (trail)
+            trail.enabled = false;
     }
 
 
