@@ -273,7 +273,7 @@ BoxCollider:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1482578115642358}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 1f624f4476b4740efb32c86e678b8d19, type: 2}
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
@@ -395,6 +395,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   canBePickedUp: 1
   _owner: {fileID: 0}
+  hasFeathers: 1
   carriedAngle: {x: 0, y: 0, z: 0}
   spinInFlight: {x: 0, y: 0, z: 0}
   transformToSpin: {fileID: 0}

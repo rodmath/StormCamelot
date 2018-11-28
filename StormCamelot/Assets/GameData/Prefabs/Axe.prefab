@@ -484,10 +484,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   canBePickedUp: 1
   _owner: {fileID: 0}
+  hasFeathers: 0
   carriedAngle: {x: 276.083, y: 222.253, z: -41.686}
   spinInFlight: {x: 360, y: 0, z: 0}
   transformToSpin: {fileID: 4142376701959664}
-  state: 0
+  state: 3
 --- !u!114 &114514916430011426
 MonoBehaviour:
   m_ObjectHideFlags: 1

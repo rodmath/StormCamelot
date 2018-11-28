@@ -342,7 +342,7 @@ MonoBehaviour:
   carriedAngle: {x: 0, y: 0, z: 0}
   spinInFlight: {x: 0, y: 0, z: -720}
   transformToSpin: {fileID: 4863173056531666}
-  state: 0
+  state: 3
 --- !u!114 &114376113310549314
 MonoBehaviour:
   m_ObjectHideFlags: 1
