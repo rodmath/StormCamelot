@@ -18,9 +18,12 @@ public class Actor : MonoBehaviour
 
 
     [Header("Weaponary")]
+    public ProjectileLauncher launcher;
     public Projectile projectile;
     public float throwForce = 30f;
     public float throwAngle = 15f;
+
+
 
     [Header("Move and Aim stuff")]
     public Color aimColour = Color.blue;
@@ -165,6 +168,14 @@ public class Actor : MonoBehaviour
 
     public Transform LaunchProjectile(float angle)
     {
+        if (launcher)
+        {
+            launcher.transform.position = actionPoint.position;
+            Transform proj = launcher.launch(gameObject, AimingVector, angle);
+
+            return proj;
+        }
+
         if (projectile)
         {
             projectile.transform.position = actionPoint.position;
@@ -264,7 +275,7 @@ public class Actor : MonoBehaviour
             StartCoroutine(PickupDelay(otherProj, 1f));
 
             Vector3 gripOffset = (actionPoint.right * 0.75f) + (actionPoint.up * 0.25f);
-            otherProj.Grab(gameObject, actionPoint.transform, gripOffset);
+            otherProj.Grabbed(gameObject, actionPoint.transform, gripOffset);
         }
             
     }
@@ -273,6 +284,10 @@ public class Actor : MonoBehaviour
     {
         yield return new WaitForSeconds(secs);
         projectile = pickupProj;
+
+        ProjectileLauncher pl = pickupProj.GetComponent<ProjectileLauncher>();
+        if (pl)
+            launcher = pl;
     }
 
 

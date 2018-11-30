@@ -33,12 +33,10 @@ public class Projectile : Item
     private float speed;
     private float restTimer = 0.5f;
 
-    private Item item;
     private TrailRenderer trail;
 
-    void Start()
+    void Awake()
     {
-        item = GetComponent<Item>();
         projectileBody = GetComponent<Rigidbody>();
 
         trail = GetComponentInChildren<TrailRenderer>();
@@ -54,7 +52,7 @@ public class Projectile : Item
 
         lastPosition = transform.position;
 
-        item.Release();
+        Release();
 
         projectileBody.velocity = transform.forward * force;
         if (trail) 
@@ -147,7 +145,7 @@ public class Projectile : Item
         {
             state = ProjectileState.impaled;
 
-            item.Grab(collision.collider.gameObject);
+            Grabbed(collision.collider.gameObject);
         }
         else
             state = ProjectileState.deflected;

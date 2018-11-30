@@ -50,7 +50,7 @@ public class Item : MonoBehaviour
     }
 
 
-    public void Grab(GameObject newOwner, Transform holdPoint = null, Vector3 gripOffset = new Vector3())
+    public void Grabbed(GameObject newOwner, Transform holdPoint = null, Vector3 gripOffset = new Vector3())
     {
         if (holdPoint)
         {
