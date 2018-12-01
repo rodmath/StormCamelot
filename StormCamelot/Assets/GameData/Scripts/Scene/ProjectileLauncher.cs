@@ -17,7 +17,7 @@ public class ProjectileLauncher : MonoBehaviour {
         GameObject newProjObj = Instantiate(projectilePrefab);
         newProjObj.transform.position = launchPostion.position;
         newProjObj.transform.forward = aimingVector;
-        //newProjObj.transform.Rotate(-vAngle, 0f, 0f, Space.Self);
+        newProjObj.transform.Rotate(-vAngle, 0f, 0f, Space.Self);
 
 
         Projectile newProj =  newProjObj.GetComponent<Projectile>();
