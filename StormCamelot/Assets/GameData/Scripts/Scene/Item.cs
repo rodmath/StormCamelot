@@ -34,7 +34,7 @@ public class Item : MonoBehaviour
 
 
 
-    private void IgnoreCollisions(GameObject obj, bool ignore)
+    public void IgnoreCollisions(GameObject obj, bool ignore)
     {
         foreach (Collider thisCol in GetComponentsInChildren<Collider>())
             foreach (Collider otherCol in obj.GetComponentsInChildren<Collider>())

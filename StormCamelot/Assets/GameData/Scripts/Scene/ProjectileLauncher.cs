@@ -21,7 +21,10 @@ public class ProjectileLauncher : MonoBehaviour {
 
 
         Projectile newProj =  newProjObj.GetComponent<Projectile>();
-        newProj.Grabbed(owner);
+        //don't hit us or our owner
+        newProj.IgnoreCollisions(owner, true);
+        newProj.IgnoreCollisions(gameObject, true);
+
         newProj.Launch(power);
 
         return newProjObj.transform;
