@@ -51,6 +51,7 @@ public class Life : MonoBehaviour
         if (nav)
             nav.enabled = active;
 
+
         Actor agent = GetComponent<Actor>();
         if (agent)
             agent.enabled = active;
@@ -62,6 +63,7 @@ public class Life : MonoBehaviour
         state = LifeState.takingLastBreaths;
 
         MakeComponents(false);
+
 
         Rigidbody body = GetComponent<Rigidbody>();
         if (body)
@@ -79,6 +81,14 @@ public class Life : MonoBehaviour
             int twitches = Random.Range(2, 5);
             for (int i = 0; i < twitches; i++)
             {
+                //if we are frozen don't do anything until we are not frozern
+                RigidbodyFreeze rbf = GetComponent<RigidbodyFreeze>();
+                if (rbf)
+                {
+                    while (rbf.Frozen)
+                        yield return new WaitForEndOfFrame();
+                }
+
                 body.AddForce(Random.onUnitSphere * body.mass / 5f, ForceMode.Impulse);
                 body.AddTorque(Random.onUnitSphere * body.mass / 5f, ForceMode.Impulse);
 

@@ -9,6 +9,9 @@ using UnityEngine.AI;
 
 public class InputDirector : MonoBehaviour
 {
+    [Header("Inspector setup variables")]
+    public GameObject playerSelectButton;
+
     [Header("Settings")]
     public float soldierSelectionRange = 3f;
     public float soldierNoActionRange = 1f;
@@ -129,10 +132,8 @@ public class InputDirector : MonoBehaviour
             }
         }
 
-        if (soldierToSelect)
-            SelectSoldier(soldierToSelect);
-        else
-            SelectSoldier(soldierSelected);//re-select to revert all settings (i.e. look at it again)
+
+        SelectSoldier(soldierSelected);//re-select to revert all settings (i.e. look at it again)
     }
 
 
@@ -141,6 +142,8 @@ public class InputDirector : MonoBehaviour
         //if we're in FPS mode we are launching something
         if (inFPSmode)
         {
+            soldierSelected.vCamFPS.Priority = 10;
+
             if (soldierSelected.projectile)
             {
                 // Capture the FPS press as an X rotation to determine the flight angle
@@ -163,11 +166,9 @@ public class InputDirector : MonoBehaviour
 
                 StartCoroutine(MoveCameraThenLaunch(soldierSelected, xAngle, yAngle));
             }
-            else
-                inFPSmode = false;
 
-
-            soldierSelected.vCamFPS.Priority = 10;
+            SelectSoldier(null);
+            inFPSmode = false;
             return;
         }
 
@@ -196,7 +197,7 @@ public class InputDirector : MonoBehaviour
             yield return new WaitForEndOfFrame();
         }
 
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(1f);
 
         FreezeRigidBodies(false);
 
@@ -216,6 +217,7 @@ public class InputDirector : MonoBehaviour
     {
         if (soldierSelected)
         {
+            playerSelectButton.SetActive(true);
             soldierSelected.vCamOverhead.Priority = 11;
             soldierSelected.vCamFPS.Priority = 10;
             soldierSelected.ShowSelected = false;
@@ -227,6 +229,7 @@ public class InputDirector : MonoBehaviour
 
         if (newSelectedSoldier)
         {
+            playerSelectButton.SetActive(false);
             soldierSelected = newSelectedSoldier;
             soldierSelected.ShowSelected = true;
 
@@ -307,4 +310,15 @@ public class InputDirector : MonoBehaviour
     private void UpdateFPSControl()
     {
     }
+
+    public void GotoPlayerButtonClick()
+    {
+        if (inFPSmode)
+            return;
+
+
+            SelectSoldier(soldiers[0]);
+
+    }
+
 }

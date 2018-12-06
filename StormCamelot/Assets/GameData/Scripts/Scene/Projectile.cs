@@ -137,7 +137,7 @@ public class Projectile : Item
         //we are going to need a new owner
         Owner = null;
 
-        Impenetrable impenetrable = collision.collider.GetComponent<Impenetrable>();
+        Impenetrable impenetrable = collision.contacts[0].otherCollider.GetComponent<Impenetrable>();
         Damage d = collision.contacts[0].thisCollider.GetComponent<Damage>();
 
 

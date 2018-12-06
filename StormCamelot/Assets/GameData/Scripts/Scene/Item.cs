@@ -43,13 +43,6 @@ public class Item : MonoBehaviour
 
 
 
-    private void SetCollidersAsTriggers(bool asTriggers)
-    {
-        foreach (Collider c in GetComponentsInChildren<Collider>())
-            c.isTrigger = asTriggers;
-    }
-
-
     public void Grabbed(GameObject newOwner, Transform holdPoint = null, Vector3 gripOffset = new Vector3())
     {
         if (holdPoint)

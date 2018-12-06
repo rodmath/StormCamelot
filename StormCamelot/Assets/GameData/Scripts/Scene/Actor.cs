@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
 using Vectrosity;
 using Cinemachine;
 
@@ -58,7 +59,9 @@ public class Actor : MonoBehaviour
     private Life life;
     private Color actionRadiusBaseColour;
 
+
     public bool ShowSelected { set { actionRadius.enabled = value; } }
+    public bool IsArmed {get { return (projectile != null || launcher != null); }}
 
     void Start()
     {
@@ -70,6 +73,19 @@ public class Actor : MonoBehaviour
         actionRadius.enabled = false;
         actionRadiusBaseColour = actionRadius.color;
     }
+
+    void OnDrawGizmos()
+    {
+        if (enabled)
+        {
+            Vector3 offset = new Vector3(0, 0.8f, 0);
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(head.position, head.position + offset);
+            Handles.color = Color.red;
+            Handles.Label(head.position + offset, name);
+        }
+    }
+
 
     public void SetupInput(float min, float max, float move)
     {
