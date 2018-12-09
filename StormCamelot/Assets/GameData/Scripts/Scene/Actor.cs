@@ -24,6 +24,9 @@ public class Actor : MonoBehaviour
     public float throwForce = 30f;
     public float throwAngle = 15f;
 
+    [Header("AI")]
+    public Transform target;
+    public Transform foeTarget;
 
 
     [Header("Move and Aim stuff")]

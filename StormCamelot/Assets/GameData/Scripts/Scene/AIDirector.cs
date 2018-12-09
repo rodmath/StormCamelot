@@ -144,40 +144,83 @@ public class AIDirector : MonoBehaviour
             return;
 
 
-        //have we got to our destination, so need a new one
-        if (agent.pathStatus == NavMeshPathStatus.PathComplete && agent.remainingDistance <= 0) //Arrived.
+        //If we can attack them, do that
+        if (TryAndAttackFoe(a, agent))
+            return;
+
+        //if we are on a path somewhere, just keep going
+        bool randomReplan = (Random.Range(0, 100) == 1);
+        bool endOfPath = (agent.pathStatus == NavMeshPathStatus.PathComplete || agent.remainingDistance <= 0.2f); //Arrived.
+
+        if (!randomReplan && !endOfPath)
+            return;
+
+        //we're not on a path, and couldn't attack anyone, so now:
+        //do we have a weapon, do we have an enemy
+
+        if (!a.IsArmed)
         {
-            //if we haven't got a weapon head to the closest one.
-            if (!a.IsArmed)
+            a.target = GetClosesWeapon(a, agent);
+            agent.destination = a.target.position;
+            return;
+        }
+
+        //ensure we have a foe
+        if (!a.foeTarget)
+            a.foeTarget = Useful.PickRandom<Actor>(goodies).transform;
+
+        agent.destination = a.foeTarget.position;
+    }
+
+
+    private Transform GetClosesWeapon(Actor actor, NavMeshAgent agent)
+    {
+        float minDist = float.PositiveInfinity;
+        Item closestItem = null;
+        foreach (Item i in items)
+        {
+            if (i.canBePickedUp)
             {
-                float minDist = float.PositiveInfinity;
-                Item closestItem = null;
-                foreach (Item i in items)
+                float dist = (actor.transform.position - i.transform.position).magnitude;
+                if (dist < minDist)
                 {
-                    if (i.canBePickedUp)
-                    {
-                        float dist = (a.transform.position - i.transform.position).magnitude;
-                        if (dist < minDist)
-                        {
-                            closestItem = i;
-                            minDist = dist;
-                        }
-                    }
+                    closestItem = i;
+                    minDist = dist;
                 }
-
-                agent.destination = closestItem.transform.position;
-                return;
-            }
-
-            else
-            {
-                //we are armed - head towatds a player
-                agent.destination = Useful.PickRandom<Actor>(goodies).transform.position;
             }
         }
 
-
+        return closestItem.transform;
     }
 
+
+    private bool TryAndAttackFoe(Actor actor, NavMeshAgent agent)
+    {
+        //are we armed
+        if (!actor.IsArmed)
+            return false;
+
+        //do we have a target
+        if (!actor.foeTarget)
+            return false;
+
+        GameObject us = actor.gameObject;
+        GameObject them = actor.foeTarget.gameObject;
+
+        //are they too far away
+        float minDist = 5;
+        if ((us.transform.position - them.transform.position).magnitude > minDist)
+            return false;
+
+        //can we actually see them
+        if (!Useful.hasLOS(us, them))
+            return false;
+
+
+        agent.isStopped = true;
+        agent.ResetPath();
+
+        return true;
+    }
 
 }
