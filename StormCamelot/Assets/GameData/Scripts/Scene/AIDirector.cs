@@ -147,6 +147,9 @@ public class AIDirector : MonoBehaviour
         //If we can attack them, do that
         if (TryAndAttackFoe(a, agent))
             return;
+        else
+            a.attackTimer = 1f;
+
 
         //if we are on a path somewhere, just keep going
         bool randomReplan = (Random.Range(0, 100) == 1);
@@ -160,7 +163,7 @@ public class AIDirector : MonoBehaviour
 
         if (!a.IsArmed)
         {
-            a.target = GetClosesWeapon(a, agent);
+            a.target = GetClosestWeapon(a, agent);
             agent.destination = a.target.position;
             return;
         }
@@ -173,7 +176,7 @@ public class AIDirector : MonoBehaviour
     }
 
 
-    private Transform GetClosesWeapon(Actor actor, NavMeshAgent agent)
+    private Transform GetClosestWeapon(Actor actor, NavMeshAgent agent)
     {
         float minDist = float.PositiveInfinity;
         Item closestItem = null;
@@ -208,8 +211,11 @@ public class AIDirector : MonoBehaviour
         GameObject them = actor.foeTarget.gameObject;
 
         //are they too far away
-        float minDist = 5;
-        if ((us.transform.position - them.transform.position).magnitude > minDist)
+        float minDist = 10;
+        Vector3 targetVect = them.transform.position - us.transform.position;
+        actor.AimIn(targetVect);
+
+        if (targetVect.magnitude > minDist)
             return false;
 
         //can we actually see them
@@ -219,6 +225,13 @@ public class AIDirector : MonoBehaviour
 
         agent.isStopped = true;
         agent.ResetPath();
+
+        actor.attackTimer -= Time.deltaTime;
+        if (actor.attackTimer <=0)
+        {
+            actor.LaunchProjectile(10f);
+            actor.attackTimer = 1f;
+        }
 
         return true;
     }

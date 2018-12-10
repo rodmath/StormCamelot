@@ -27,7 +27,7 @@ public class Actor : MonoBehaviour
     [Header("AI")]
     public Transform target;
     public Transform foeTarget;
-
+    public float attackTimer;
 
     [Header("Move and Aim stuff")]
     public Color aimColour = Color.blue;
