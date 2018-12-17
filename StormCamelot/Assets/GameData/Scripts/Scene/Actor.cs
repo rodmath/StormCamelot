@@ -41,6 +41,7 @@ public class Actor : MonoBehaviour
 
 
     [Header("Input distance limits - set by director")]
+    private InputDirector inputDirector;
     private float aimMin = 1f;
     private float aimMax = 2f;
     private float moveTriggerRange = 3f;
@@ -66,6 +67,8 @@ public class Actor : MonoBehaviour
     public bool ShowSelected { set { actionRadius.enabled = value; } }
     public bool IsArmed {get { return (projectile != null || launcher != null); }}
 
+
+
     void Start()
     {
         agentBody = GetComponent<Rigidbody>();
@@ -90,12 +93,14 @@ public class Actor : MonoBehaviour
     }
 
 
-    public void SetupInput(float min, float max, float move)
+    public void SetupInput(InputDirector id)
     {
-        aimMin = min;
-        aimMax = max;
-        moveTriggerRange = move;
-        actionRadius.transform.localScale = Vector3.one * move;
+        //soldierNoActionRange, soldierSelectionRange, soldierSelectionRange
+        inputDirector = id;
+        aimMin = id.soldierNoActionRange;
+        aimMax = id.soldierSelectionRange;
+        moveTriggerRange = id.soldierSelectionRange;
+        actionRadius.transform.localScale = Vector3.one * id.soldierSelectionRange;
     }
 
 

@@ -26,10 +26,13 @@ public class AIDirector : MonoBehaviour
     private List<Item> items;
     private List<SpawnLocation> usedSpawns;
 
+    private FreezeMaster freezeMaster;
 
-    // Use this for initialization
+
+
     void Start()
     {
+        freezeMaster = Object.FindObjectOfType<FreezeMaster>();
 
         spawns = Object.FindObjectsOfType<SpawnLocation>().ToList();
         items = Object.FindObjectsOfType<Item>().ToList();
@@ -117,6 +120,10 @@ public class AIDirector : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //do nothing while frozen
+        if (freezeMaster.IsFrozen)
+            return;
+
         activeBaddies = 0;
         foreach (Actor a in baddies)
         {

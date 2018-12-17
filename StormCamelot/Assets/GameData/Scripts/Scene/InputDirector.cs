@@ -21,8 +21,7 @@ public class InputDirector : MonoBehaviour
     private Actor soldierSelected;
     private bool inFPSmode = false;
 
-    private List<RigidbodyFreeze> freezers;
-    private bool rigidBodiesFrozen = false;
+    private FreezeMaster freezeMaster;
 
     private Vector3 clickPos;
     private VectorLine horizon;
@@ -30,11 +29,11 @@ public class InputDirector : MonoBehaviour
 
     private void Start()
     {
-        freezers = Object.FindObjectsOfType<RigidbodyFreeze>().ToList();
+        freezeMaster = Object.FindObjectOfType<FreezeMaster>();
         soldiers = Object.FindObjectsOfType<Actor>().ToList();
 
         foreach (Actor s in soldiers)
-            s.SetupInput(soldierNoActionRange, soldierSelectionRange, soldierSelectionRange);
+            s.SetupInput(this);
 
 
         horizon = new VectorLine("Line: Horizon", new List<Vector2>(), 1);
@@ -77,7 +76,7 @@ public class InputDirector : MonoBehaviour
                 SelectSoldier(soldiers[3]);
 
             if (Input.GetKeyDown("p"))
-                ToggleFreeze();
+                freezeMaster.ToggleFreeze();
 
             if (Input.GetKeyDown("z"))
                 SetDestinationsTo(soldiers[0].transform.position);
@@ -199,7 +198,7 @@ public class InputDirector : MonoBehaviour
 
         yield return new WaitForSeconds(1f);
 
-        FreezeRigidBodies(false);
+        freezeMaster.FreezeRigidBodies(false);
 
         Transform projectile = launchingAgent.LaunchProjectile(xAngle);
 
@@ -224,7 +223,7 @@ public class InputDirector : MonoBehaviour
             soldierSelected = null;
 
             //unfreeze - in case no new soldier selected
-            FreezeRigidBodies(false);
+            freezeMaster.FreezeRigidBodies(false);
         }
 
         if (newSelectedSoldier)
@@ -238,7 +237,7 @@ public class InputDirector : MonoBehaviour
             soldierSelected.vCamOverhead.LookAt = soldierSelected.transform;
             inFPSmode = false;
 
-            FreezeRigidBodies(true);
+            freezeMaster.FreezeRigidBodies(true);
         }
 
 
@@ -253,7 +252,7 @@ public class InputDirector : MonoBehaviour
         if (dir.magnitude > soldierSelectionRange)
         {
             //we're moving, start time and move
-            FreezeRigidBodies(false); 
+            freezeMaster.FreezeRigidBodies(false); 
             soldierSelected.ClearAiming();
             soldierSelected.MoveIn(dir);
 
@@ -261,7 +260,7 @@ public class InputDirector : MonoBehaviour
         else
         {
             //we're either aiming or doing nothing, either way ensure time frozen
-            FreezeRigidBodies(true);
+            freezeMaster.FreezeRigidBodies(true);
             if (dir.magnitude > soldierNoActionRange)
                 soldierSelected.AimIn(dir);
             else
@@ -286,22 +285,6 @@ public class InputDirector : MonoBehaviour
     }
 
 
-    private void FreezeRigidBodies(bool makeFrozen)
-    {
-
-        rigidBodiesFrozen = makeFrozen;
-        foreach (RigidbodyFreeze freeze in freezers)
-            freeze.Freeze = rigidBodiesFrozen;
-
-    }
-
-    private void ToggleFreeze()
-    {
-        rigidBodiesFrozen = !rigidBodiesFrozen;
-        foreach (RigidbodyFreeze freeze in freezers)
-            freeze.Freeze = rigidBodiesFrozen;
-
-    }
 
     private void UpdateCameraPanControl()
     {
